@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>街区死守 Block Siege</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game-root">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <!-- 战斗 HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="hud-block">
+          <div class="hp-label">生命</div>
+          <div class="hp-bar"><div id="hp-fill"></div></div>
+        </div>
+        <div class="hud-block" id="hud-day">第 1 天</div>
+        <div class="hud-block" id="hud-wave">尸潮：0</div>
+        <div class="hud-block" id="hud-coins">💰 0</div>
+      </div>
+      <div class="hud-bottom">
+        <div class="hud-block" id="hud-weapon">手枪 12/∞</div>
+        <div class="hud-block" id="hud-kick">踹击 就绪</div>
+        <div class="hud-block hint">WASD移动 · 鼠标射击 · R换弹 · 空格踹击 · Q切枪 · Esc暂停</div>
+      </div>
+      <div id="pause-banner" class="hidden">已暂停 - 按 Esc 继续</div>
+    </div>
+
+    <!-- 菜单 / 商店 / 奖励 / 结算 覆盖层 -->
+    <div id="overlay"></div>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

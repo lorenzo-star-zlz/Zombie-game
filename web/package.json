@@ -1,0 +1,9 @@
+{
+  "name": "zombie-blockade",
+  "version": "0.1.0",
+  "description": "街区死守 - 2D 卡通横板僵尸肉鸽塔防射击游戏",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

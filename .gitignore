@@ -1,0 +1,12 @@
+# Godot
+godot/.godot/
+godot/export_presets.cfg
+*.translation
+
+# 本地工具（Godot 引擎二进制，仅用于本机验证，不入库）
+tools/godot-bin/
+
+# 系统
+Thumbs.db
+.DS_Store
+node_modules/

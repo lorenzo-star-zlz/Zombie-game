@@ -1,0 +1,150 @@
+# 覆盖层界面：主菜单 / 白天商店 / 夜晚结算+肉鸽三选一 / 失败 / 胜利。
+# 全部代码动态构建 Control，不含游戏逻辑（逻辑通过 Callable 回调给 main）。
+class_name Screens
+extends CanvasLayer
+
+var _font: SystemFont
+var _root: Control = null
+
+func _ready() -> void:
+	layer = 10
+	_font = Hud.make_cjk_font()
+
+func clear() -> void:
+	if _root != null:
+		_root.queue_free()
+		_root = null
+
+# ---------- 面板骨架 ----------
+func _begin_panel() -> VBoxContainer:
+	clear()
+	_root = Control.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_root)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.add_child(center)
+
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.09, 0.08, 0.14, 0.96)
+	sb.border_color = Color(0.29, 0.25, 0.4)
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(14)
+	sb.set_content_margin_all(28)
+	panel.add_theme_stylebox_override("panel", sb)
+	center.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(vbox)
+	return vbox
+
+func _mk_label(parent: Node, text: String, font_size: int, color := Color.WHITE) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_override("font", _font)
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_color_override("font_color", color)
+	parent.add_child(l)
+	return l
+
+func _mk_button(parent: Node, text: String, font_size := 20) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.add_theme_font_override("font", _font)
+	b.add_theme_font_size_override("font_size", font_size)
+	parent.add_child(b)
+	return b
+
+const GOLD := Color(1.0, 0.82, 0.4)
+const GREEN := Color(0.49, 0.91, 0.53)
+const DIM := Color(1, 1, 1, 0.7)
+
+# ---------- 主菜单 ----------
+func show_menu(on_start: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "🧟 街区死守", 42, GOLD)
+	_mk_label(v, "白天备战，夜晚守住街区。撑过 %d 天就是胜利。" % WaveData.TOTAL_DAYS, 15, DIM)
+	_mk_label(v, "WASD 移动 · 鼠标射击 · R 换弹 · 空格/F 踹开僵尸 · Q 切枪", 15, DIM)
+	var b := _mk_button(v, "开始游戏")
+	b.pressed.connect(on_start)
+
+# ---------- 白天商店 ----------
+func show_shop(m, on_night: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "☀️ 第 %d 天 · 白天" % m.day, 28, GOLD)
+	_mk_label(v, "💰 金币：%d" % m.coins, 20, GOLD)
+
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	v.add_child(grid)
+
+	for item in ShopData.ITEMS:
+		var price: int = ShopData.price_of(m, item)
+		var can_show: bool = ShopData.is_available(m, item["id"])
+		var afford: bool = m.coins >= price
+		var price_txt: String = ("$%d" % price) if can_show else "—"
+		var b := _mk_button(grid, "%s %s   %s\n%s" % [item["icon"], item["name"], price_txt, item["desc"]], 15)
+		b.custom_minimum_size = Vector2(360, 76)
+		b.disabled = not can_show or not afford
+		b.pressed.connect(_on_buy.bind(m, item, on_night))
+
+	var p: Player = m.player
+	var inv := []
+	for w in p.weapons:
+		var reserve: String = "∞" if w["def"]["infinite_reserve"] else str(w["reserve"])
+		inv.append("%s（备弹 %s）" % [w["def"]["name"], reserve])
+	_mk_label(v, "🎒 持有：" + " · ".join(inv), 14, DIM)
+	_mk_label(v, "❤ 生命：%d/%d" % [int(ceil(p.hp)), int(p.max_hp())], 14, DIM)
+
+	var night_btn := _mk_button(v, "🌙 进入夜晚（第 %d 晚）" % m.day)
+	night_btn.pressed.connect(on_night)
+
+func _on_buy(m, item: Dictionary, on_night: Callable) -> void:
+	var price: int = ShopData.price_of(m, item)
+	if not ShopData.is_available(m, item["id"]) or m.coins < price:
+		return
+	m.coins -= price
+	m.purchase_counts[item["id"]] = m.purchase_counts.get(item["id"], 0) + 1
+	ShopData.buy(m, item["id"])
+	show_shop(m, on_night)  # 刷新界面
+
+# ---------- 夜晚结算 + 肉鸽三选一 ----------
+func show_night_reward(m, perks: Array, bonus: int, on_pick: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "🌙 第 %d 晚 · 防守成功！" % m.day, 28, GOLD)
+	_mk_label(v, "击杀 %d 只僵尸 · 通宵奖励 +%d 金币" % [m.night_kills, bonus], 17, GREEN)
+	_mk_label(v, "选择一个强化（本局永久生效）：", 14, DIM)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 16)
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_child(hbox)
+
+	for perk in perks:
+		var b := _mk_button(hbox, "%s\n%s\n\n%s" % [perk["icon"], perk["name"], perk["desc"]], 16)
+		b.custom_minimum_size = Vector2(210, 190)
+		b.pressed.connect(on_pick.bind(perk))
+
+# ---------- 失败 / 胜利 ----------
+func show_game_over(m, on_restart: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "💀 街区失守", 32, Color(1.0, 0.4, 0.4))
+	_mk_label(v, "你撑到了第 %d 天" % m.day, 17)
+	_mk_label(v, "总击杀：%d 只僵尸" % m.total_kills, 17)
+	var b := _mk_button(v, "再来一局")
+	b.pressed.connect(on_restart)
+
+func show_win(m, on_restart: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "🏆 守住了！", 32, GOLD)
+	_mk_label(v, "你成功撑过了 %d 天尸潮！" % WaveData.TOTAL_DAYS, 17)
+	_mk_label(v, "总击杀：%d 只僵尸 · 剩余金币：%d" % [m.total_kills, m.coins], 17)
+	var b := _mk_button(v, "再来一局")
+	b.pressed.connect(on_restart)

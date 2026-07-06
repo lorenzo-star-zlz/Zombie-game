@@ -1,0 +1,183 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #1a1622;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  user-select: none;
+}
+
+#game-root {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  /* JS 会按窗口比例缩放 */
+}
+
+#game {
+  display: block;
+  background: #000;
+  border-radius: 8px;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+}
+
+.hud-top {
+  position: absolute;
+  top: 12px; left: 16px; right: 16px;
+  display: flex; gap: 12px; align-items: center;
+}
+
+.hud-bottom {
+  position: absolute;
+  bottom: 12px; left: 16px; right: 16px;
+  display: flex; gap: 12px; align-items: center;
+}
+
+.hud-block {
+  background: rgba(20, 16, 30, 0.75);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.hud-block.hint {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.7;
+}
+
+.hp-label { font-size: 11px; opacity: 0.8; }
+.hp-bar {
+  width: 220px; height: 14px;
+  background: #3a2530;
+  border-radius: 7px;
+  overflow: hidden;
+}
+#hp-fill {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #e5484d, #ff7b72);
+  border-radius: 7px;
+  transition: width 0.15s;
+}
+
+#hud-weapon.reloading { color: #ffd166; }
+#hud-kick.cooling { color: #888; }
+
+#pause-banner {
+  position: absolute;
+  left: 50%; top: 45%;
+  transform: translate(-50%, -50%);
+  font-size: 36px; font-weight: bold;
+  color: #fff;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.8);
+}
+
+/* ---------- 覆盖层通用 ---------- */
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#overlay:empty { pointer-events: none; }
+
+.panel {
+  background: rgba(24, 20, 36, 0.96);
+  border: 3px solid #4a3f66;
+  border-radius: 16px;
+  padding: 32px 40px;
+  color: #fff;
+  text-align: center;
+  max-width: 900px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.panel h1 { font-size: 42px; margin-bottom: 8px; color: #ffd166; }
+.panel h2 { font-size: 28px; margin-bottom: 12px; color: #ffd166; }
+.panel .sub { opacity: 0.75; margin-bottom: 20px; font-size: 15px; }
+
+.btn {
+  display: inline-block;
+  background: linear-gradient(180deg, #f0a832, #d4841c);
+  border: none;
+  border-radius: 10px;
+  color: #2a1a00;
+  font-size: 20px;
+  font-weight: bold;
+  font-family: inherit;
+  padding: 12px 36px;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.08s;
+}
+.btn:hover { transform: scale(1.05); }
+.btn:active { transform: scale(0.97); }
+.btn.secondary { background: #4a3f66; color: #fff; font-size: 15px; padding: 8px 20px; }
+
+/* ---------- 商店 ---------- */
+.shop-coins { font-size: 22px; color: #ffd166; margin-bottom: 16px; }
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.shop-item {
+  background: #2c2542;
+  border: 2px solid #4a3f66;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.1s, transform 0.08s;
+}
+.shop-item:hover:not(.disabled) { border-color: #ffd166; transform: translateY(-2px); }
+.shop-item.disabled { opacity: 0.45; cursor: not-allowed; }
+.shop-item .item-name { font-weight: bold; font-size: 17px; }
+.shop-item .item-price { color: #ffd166; float: right; }
+.shop-item .item-desc { font-size: 13px; opacity: 0.75; margin-top: 4px; }
+
+.inventory-line { font-size: 14px; opacity: 0.8; margin-top: 12px; }
+
+/* ---------- 肉鸽奖励卡 ---------- */
+.perk-cards {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.perk-card {
+  width: 200px;
+  background: linear-gradient(180deg, #2c2542, #221c36);
+  border: 2px solid #5a4d80;
+  border-radius: 12px;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: border-color 0.1s, transform 0.1s;
+}
+.perk-card:hover { border-color: #ffd166; transform: translateY(-6px); }
+.perk-card .perk-icon { font-size: 40px; margin-bottom: 10px; }
+.perk-card .perk-name { font-weight: bold; font-size: 18px; margin-bottom: 8px; color: #ffd166; }
+.perk-card .perk-desc { font-size: 13px; opacity: 0.85; line-height: 1.5; }
+
+.reward-line { font-size: 18px; color: #7ee787; margin-bottom: 6px; }
+
+/* ---------- 结算 ---------- */
+.stats-line { font-size: 17px; margin: 6px 0; opacity: 0.9; }
