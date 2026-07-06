@@ -69,7 +69,7 @@ func show_menu(on_start: Callable) -> void:
 	var v := _begin_panel()
 	_mk_label(v, "🧟 街区死守", 42, GOLD)
 	_mk_label(v, "白天备战，夜晚守住街区。撑过 %d 天就是胜利。" % WaveData.TOTAL_DAYS, 15, DIM)
-	_mk_label(v, "WASD 移动 · 鼠标射击 · R 换弹 · 空格/F 踹开僵尸 · Q 切枪", 15, DIM)
+	_mk_label(v, "WASD 移动 · 鼠标射击 · R 换弹 · 空格/F 快速近战 · Q 或 1-4 切换武器槽", 15, DIM)
 	var b := _mk_button(v, "开始游戏")
 	b.pressed.connect(on_start)
 
@@ -80,7 +80,7 @@ func show_shop(m, on_night: Callable) -> void:
 	_mk_label(v, "💰 金币：%d" % m.coins, 20, GOLD)
 
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	v.add_child(grid)
@@ -90,17 +90,18 @@ func show_shop(m, on_night: Callable) -> void:
 		var can_show: bool = ShopData.is_available(m, item["id"])
 		var afford: bool = m.coins >= price
 		var price_txt: String = ("$%d" % price) if can_show else "—"
-		var b := _mk_button(grid, "%s %s   %s\n%s" % [item["icon"], item["name"], price_txt, item["desc"]], 15)
-		b.custom_minimum_size = Vector2(360, 76)
+		var b := _mk_button(grid, "%s · %s   %s\n%s" % [item["icon"], item["name"], price_txt, item["desc"]], 13)
+		b.custom_minimum_size = Vector2(270, 62)
 		b.disabled = not can_show or not afford
 		b.pressed.connect(_on_buy.bind(m, item, on_night))
 
 	var p: Player = m.player
-	var inv := []
-	for w in p.weapons:
-		var reserve: String = "∞" if w["def"]["infinite_reserve"] else str(w["reserve"])
-		inv.append("%s（备弹 %s）" % [w["def"]["name"], reserve])
-	_mk_label(v, "🎒 持有：" + " · ".join(inv), 14, DIM)
+	var inventory := []
+	for index in range(p.weapons.size()):
+		var weapon = p.weapons[index]
+		var weapon_name := "空" if weapon == null else str(weapon["def"]["name"])
+		inventory.append("%s：%s" % [WeaponData.SLOT_NAMES[index], weapon_name])
+	_mk_label(v, "装备：" + "  ·  ".join(inventory), 14, DIM)
 	_mk_label(v, "❤ 生命：%d/%d" % [int(ceil(p.hp)), int(p.max_hp())], 14, DIM)
 
 	var night_btn := _mk_button(v, "🌙 进入夜晚（第 %d 晚）" % m.day)

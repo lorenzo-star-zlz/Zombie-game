@@ -5,12 +5,12 @@ extends Node2D
 # 按 def["sprite"] 选贴图：walker=蹒跚者，runner=奔跑者
 const TEXTURES := {
 	"walker": [
-		preload("res://assets/sprites/zombie_0.png"),
-		preload("res://assets/sprites/zombie_1.png"),
+		preload("res://assets/sprites/zombie_realistic_0.png"),
+		preload("res://assets/sprites/zombie_realistic_1.png"),
 	],
 	"runner": [
-		preload("res://assets/sprites/runner_0.png"),
-		preload("res://assets/sprites/runner_1.png"),
+		preload("res://assets/sprites/runner_realistic_0.png"),
+		preload("res://assets/sprites/runner_realistic_1.png"),
 	],
 }
 
@@ -73,9 +73,14 @@ func tick(delta: float, player: Player) -> void:
 
 	position.y = clampf(position.y, Config.BAND_TOP, Config.BAND_BOTTOM)
 
-	# 面朝玩家（贴图默认朝左）
-	_sprite.flip_h = player.position.x > position.x
-	_sprite.texture = _tex(0) if int(_anim_time * def.get("anim_fps", 6.0)) % 2 == 0 else _tex(1)
+	var frame_index := 0 if int(_anim_time * def.get("anim_fps", 6.0)) % 2 == 0 else 1
+	var faces_right := player.position.x > position.x
+	if def.get("sprite", "walker") == "walker":
+		# The walker batch returned its second frame mirrored.
+		_sprite.flip_h = (not faces_right) != (frame_index == 1)
+	else:
+		_sprite.flip_h = faces_right
+	_sprite.texture = _tex(frame_index)
 	_sprite.modulate = Color(2.0, 2.0, 2.0) if hit_flash > 0.0 else Color.WHITE
 	if stun > 0.0:
 		_sprite.modulate = Color(1.0, 1.0, 0.6)

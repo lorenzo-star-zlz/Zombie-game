@@ -5,7 +5,7 @@ const W := 1280.0
 const H := 720.0
 
 # 角色渲染：40x36 画布 × 8 倍 = 288px 高（约占屏高 40%，对齐概念截图）
-const SPRITE_SCALE := 8.0
+const SPRITE_SCALE := 1.5
 const SPRITE_OFFSET_Y := -144.0   # 画布脚底在最后一行 → 精灵中心在脚底上方 144px
 const AIM_HEIGHT := 200.0         # 持枪高度（脚底上方），子弹从这里射出
 

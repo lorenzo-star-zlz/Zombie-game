@@ -1,10 +1,8 @@
-# 玩家：移动、生命、武器背包、换弹、踹击冷却。
-# 所有肉鸽加成集中在 mods 字典，数值计算时统一乘上。
 class_name Player
 extends Node2D
 
-const TEX_0 := preload("res://assets/sprites/player_0.png")
-const TEX_1 := preload("res://assets/sprites/player_1.png")
+const TEX_0 := preload("res://assets/sprites/survivor_realistic_0.png")
+const TEX_1 := preload("res://assets/sprites/survivor_realistic_1.png")
 
 var mods := {
 	"dmg_mult": 1.0,
@@ -20,12 +18,13 @@ var mods := {
 	"heal_on_kill": 0.0,
 }
 
-var weapons: Array = []
-var weapon_index := 0
+# Fixed loadout: primary 1, primary 2, secondary, melee.
+var weapons: Array = [null, null, null, null]
+var weapon_index := 2
 var hp := 0.0
-var reload_timer := 0.0   # >0 表示正在换弹
-var fire_timer := 0.0     # >0 表示开火冷却中
-var kick_timer := 0.0     # >0 表示踹击冷却中
+var reload_timer := 0.0
+var fire_timer := 0.0
+var kick_timer := 0.0
 var aim_angle := 0.0
 var hurt_flash := 0.0
 var radius: float = Config.PLAYER["radius"]
@@ -35,8 +34,8 @@ var _anim_time := 0.0
 var _moving := false
 
 func _init() -> void:
-	# 在 _init 初始化数据（而非 _ready），保证节点入树前逻辑就可用
-	weapons = [_make_weapon("pistol")]
+	weapons[2] = _make_weapon("pistol")
+	weapons[3] = _make_weapon("knife")
 	hp = max_hp()
 
 func _ready() -> void:
@@ -44,165 +43,197 @@ func _ready() -> void:
 	_sprite.texture = TEX_0
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite.scale = Vector2(Config.SPRITE_SCALE, Config.SPRITE_SCALE)
-	_sprite.position = Vector2(0, Config.SPRITE_OFFSET_Y)  # 脚底对齐节点原点
+	_sprite.position = Vector2(0, Config.SPRITE_OFFSET_Y)
 	add_child(_sprite)
 
 func max_hp() -> float:
 	return Config.PLAYER["base_max_hp"] + mods["max_hp_add"]
 
-# 写实向机动：基础速度 × 肉鸽加成 × 当前武器负重（枪越大越慢）
 func speed() -> float:
 	return Config.PLAYER["base_speed"] * mods["move_speed_mult"] * weapon()["def"].get("move_mult", 1.0)
 
 func weapon() -> Dictionary:
 	return weapons[weapon_index]
 
+func melee_weapon() -> Dictionary:
+	return weapons[3]
+
 func _make_weapon(id: String) -> Dictionary:
 	var def: Dictionary = WeaponData.WEAPONS[id]
+	if def["category"] == "melee":
+		return { "def": def }
 	var reserve: int = 0 if def["infinite_reserve"] else def["reserve_max"]
 	return { "def": def, "mag": def["mag_size"], "reserve": reserve }
 
 func has_weapon(id: String) -> bool:
-	for w in weapons:
-		if w["def"]["id"] == id:
+	for item in weapons:
+		if item != null and item["def"]["id"] == id:
 			return true
 	return false
 
-func add_weapon(id: String) -> void:
-	if not has_weapon(id):
-		weapons.append(_make_weapon(id))
+func can_equip_category(category: String) -> bool:
+	match category:
+		"primary":
+			return weapons[0] == null or weapons[1] == null
+		"secondary", "melee":
+			return true
+	return false
 
-# 弹匣容量（受加成影响）
-func mag_size_of(w: Dictionary) -> int:
-	return int(round(w["def"]["mag_size"] * mods["mag_mult"]))
+func add_weapon(id: String) -> bool:
+	if has_weapon(id):
+		return false
+	var category: String = WeaponData.WEAPONS[id]["category"]
+	match category:
+		"primary":
+			for index in [0, 1]:
+				if weapons[index] == null:
+					weapons[index] = _make_weapon(id)
+					weapon_index = index
+					return true
+		"secondary":
+			weapons[2] = _make_weapon(id)
+			weapon_index = 2
+			return true
+		"melee":
+			weapons[3] = _make_weapon(id)
+			weapon_index = 3
+			return true
+	return false
+
+func mag_size_of(item: Dictionary) -> int:
+	if item["def"]["category"] == "melee":
+		return 0
+	return int(round(item["def"]["mag_size"] * mods["mag_mult"]))
 
 func switch_weapon(index: int) -> void:
-	if index == weapon_index or index < 0 or index >= weapons.size():
+	if index == weapon_index or index < 0 or index >= weapons.size() or weapons[index] == null:
 		return
 	weapon_index = index
-	reload_timer = 0.0  # 切枪打断换弹
+	reload_timer = 0.0
 
 func cycle_weapon() -> void:
-	switch_weapon((weapon_index + 1) % weapons.size())
+	for offset in range(1, weapons.size() + 1):
+		var candidate := (weapon_index + offset) % weapons.size()
+		if weapons[candidate] != null:
+			switch_weapon(candidate)
+			return
 
 func start_reload() -> void:
-	var w := weapon()
-	if reload_timer > 0.0:
+	var item := weapon()
+	if item["def"]["category"] == "melee" or reload_timer > 0.0:
 		return
-	if w["mag"] >= mag_size_of(w):
+	if item["mag"] >= mag_size_of(item):
 		return
-	if not w["def"]["infinite_reserve"] and w["reserve"] <= 0:
+	if not item["def"]["infinite_reserve"] and item["reserve"] <= 0:
 		return
-	reload_timer = w["def"]["reload_time"] / mods["reload_speed_mult"]
+	reload_timer = item["def"]["reload_time"] / mods["reload_speed_mult"]
 
-func take_damage(dmg: float) -> void:
-	hp -= dmg
+func take_damage(damage: float) -> void:
+	hp -= damage
 	hurt_flash = 0.25
 
 func apply_perk(perk: Dictionary) -> void:
-	for e in perk["effects"]:
-		if e.has("mul"):
-			mods[e["stat"]] *= e["mul"]
-		if e.has("add"):
-			mods[e["stat"]] += e["add"]
-		# 加生命上限时同步回复等量生命
-		if e["stat"] == "max_hp_add":
-			hp = minf(max_hp(), hp + e["add"])
+	for effect in perk["effects"]:
+		if effect.has("mul"):
+			mods[effect["stat"]] *= effect["mul"]
+		if effect.has("add"):
+			mods[effect["stat"]] += effect["add"]
+		if effect["stat"] == "max_hp_add":
+			hp = minf(max_hp(), hp + effect["add"])
 
 func tick(delta: float) -> void:
-	# 移动
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	position += dir * speed() * delta
+	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	position += direction * speed() * delta
 	position.x = clampf(position.x, 60.0, Config.W - 60.0)
 	position.y = clampf(position.y, Config.BAND_TOP, Config.BAND_BOTTOM)
-	_moving = dir.length_squared() > 0.01
+	_moving = direction.length_squared() > 0.01
 
-	# 瞄准（以持枪高度为原点）
 	var mouse := get_global_mouse_position()
 	aim_angle = (mouse - global_position + Vector2(0, Config.AIM_HEIGHT)).angle()
-	_sprite.flip_h = mouse.x < global_position.x
+	var frame_index := 0 if int(_anim_time * 8.0) % 2 == 0 else 1
+	var faces_left := mouse.x < global_position.x
+	_sprite.flip_h = faces_left != (frame_index == 1)
 
-	# 计时器
-	if fire_timer > 0.0: fire_timer -= delta
-	if kick_timer > 0.0: kick_timer -= delta
-	if hurt_flash > 0.0: hurt_flash -= delta
+	fire_timer = maxf(0.0, fire_timer - delta)
+	kick_timer = maxf(0.0, kick_timer - delta)
+	hurt_flash = maxf(0.0, hurt_flash - delta)
 
-	# 换弹进度
 	if reload_timer > 0.0:
 		reload_timer -= delta
 		if reload_timer <= 0.0:
-			var w := weapon()
-			var need: int = mag_size_of(w) - w["mag"]
-			if w["def"]["infinite_reserve"]:
-				w["mag"] += need
+			var item := weapon()
+			var need: int = mag_size_of(item) - item["mag"]
+			if item["def"]["infinite_reserve"]:
+				item["mag"] += need
 			else:
-				var take: int = mini(need, w["reserve"])
-				w["mag"] += take
-				w["reserve"] -= take
+				var take: int = mini(need, item["reserve"])
+				item["mag"] += take
+				item["reserve"] -= take
 
-	# 走路动画 + 受击红闪
 	_anim_time += delta
-	if _moving:
-		_sprite.texture = TEX_0 if int(_anim_time * 8.0) % 2 == 0 else TEX_1
-	else:
-		_sprite.texture = TEX_0
+	_sprite.texture = TEX_0 if not _moving or frame_index == 0 else TEX_1
 	_sprite.modulate = Color(1, 0.4, 0.4) if hurt_flash > 0.0 else Color.WHITE
-
 	queue_redraw()
 
-# 尝试开火：返回子弹参数数组，不能开火返回空数组
 func try_fire() -> Array:
-	var w := weapon()
+	var item := weapon()
+	if item["def"]["category"] == "melee":
+		return []
 	if reload_timer > 0.0 or fire_timer > 0.0:
 		return []
-	var want: bool = Input.is_action_pressed("fire") if w["def"]["auto"] else Input.is_action_just_pressed("fire")
-	if not want:
+	var wants_fire: bool = Input.is_action_pressed("fire") if item["def"]["auto"] else Input.is_action_just_pressed("fire")
+	if not wants_fire:
 		return []
-	if w["mag"] <= 0:
+	if item["mag"] <= 0:
 		start_reload()
 		return []
 
-	w["mag"] -= 1
-	fire_timer = w["def"]["fire_interval"] / mods["fire_rate_mult"]
-	if w["mag"] <= 0:
-		start_reload()  # 打空自动换弹
+	item["mag"] -= 1
+	fire_timer = item["def"]["fire_interval"] / mods["fire_rate_mult"]
+	if item["mag"] <= 0:
+		start_reload()
 
 	var shots := []
 	var muzzle := global_position + Vector2(cos(aim_angle), sin(aim_angle)) * 145.0 + Vector2(0, -Config.AIM_HEIGHT)
-	for i in range(w["def"]["pellets"]):
-		var spread: float = (randf() - 0.5) * deg_to_rad(w["def"]["spread_deg"])
-		var ang := aim_angle + spread
+	for _pellet in range(item["def"]["pellets"]):
+		var spread: float = (randf() - 0.5) * deg_to_rad(item["def"]["spread_deg"])
+		var angle := aim_angle + spread
 		shots.append({
 			"pos": muzzle,
-			"vel": Vector2(cos(ang), sin(ang)) * w["def"]["bullet_speed"],
-			"damage": w["def"]["damage"] * mods["dmg_mult"],
-			"pierce": w["def"]["pierce"] + mods["pierce_add"],
-			"max_dist": w["def"]["range"],
+			"vel": Vector2(cos(angle), sin(angle)) * item["def"]["bullet_speed"],
+			"damage": item["def"]["damage"] * mods["dmg_mult"],
+			"pierce": item["def"]["pierce"] + mods["pierce_add"],
+			"max_dist": item["def"]["range"],
 		})
 	return shots
 
-# 尝试踹击：返回踹击参数，冷却中或未按键返回空字典
-func try_kick() -> Dictionary:
-	if kick_timer > 0.0:
+func try_selected_melee() -> Dictionary:
+	if weapon()["def"]["category"] != "melee" or not Input.is_action_just_pressed("fire"):
 		return {}
+	return _try_melee_attack()
+
+func try_kick() -> Dictionary:
 	if not Input.is_action_just_pressed("kick"):
 		return {}
-	var P: Dictionary = Config.PLAYER
-	kick_timer = P["kick_cooldown"] * mods["kick_cd_mult"]
+	return _try_melee_attack()
+
+func _try_melee_attack() -> Dictionary:
+	if kick_timer > 0.0:
+		return {}
+	var definition: Dictionary = melee_weapon()["def"]
+	kick_timer = definition["cooldown"] * mods["kick_cd_mult"]
 	return {
-		"radius": P["kick_radius"],
-		"damage": P["kick_damage"] * mods["kick_power_mult"],
-		"knockback": P["kick_knockback"] * mods["kick_power_mult"],
-		"stun": P["kick_stun"],
+		"radius": definition["radius"],
+		"damage": definition["damage"] * mods["kick_power_mult"] * mods["dmg_mult"],
+		"knockback": definition["knockback"] * mods["kick_power_mult"],
+		"stun": definition["stun"],
 	}
 
 func _draw() -> void:
-	# 脚下阴影
 	draw_set_transform(Vector2(0, -2), 0.0, Vector2(1.0, 0.3))
 	draw_circle(Vector2.ZERO, 52.0, Color(0, 0, 0, 0.3))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	# 换弹进度环（头顶上方）
-	if reload_timer > 0.0:
+	if reload_timer > 0.0 and weapon()["def"]["category"] != "melee":
 		var total: float = weapon()["def"]["reload_time"] / mods["reload_speed_mult"]
-		var t := 1.0 - reload_timer / total
-		draw_arc(Vector2(0, -320), 16.0, -PI / 2, -PI / 2 + t * TAU, 24, Color(1.0, 0.82, 0.4), 5.0)
+		var progress := 1.0 - reload_timer / total
+		draw_arc(Vector2(0, -320), 16.0, -PI / 2, -PI / 2 + progress * TAU, 24, Color(1.0, 0.82, 0.4), 5.0)

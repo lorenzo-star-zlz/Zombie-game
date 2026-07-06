@@ -108,15 +108,24 @@ func _process(_delta: float) -> bool:
 	# 商店测试
 	if frame == 260:
 		print("商店:")
-		main.coins = 500
+		main.coins = 2000
+		check("初始拥有一把副武器", main.player.weapons[2]["def"]["id"] == "pistol")
+		check("初始拥有一把近战武器", main.player.weapons[3]["def"]["id"] == "knife")
 		check("霰弹枪可购买", ShopData.is_available(main, "buy_shotgun"))
 		ShopData.buy(main, "buy_shotgun")
 		check("购买后拥有霰弹枪", main.player.has_weapon("shotgun"))
 		check("购买后商店下架", not ShopData.is_available(main, "buy_shotgun"))
+		ShopData.buy(main, "buy_kar98k")
+		check("可装备两把主武器", main.player.weapons[0] != null and main.player.weapons[1] != null)
+		check("主武器槽满后禁止继续购买", not ShopData.is_available(main, "buy_ak47"))
+		ShopData.buy(main, "buy_uzi")
+		check("UZI 替换副武器槽", main.player.weapons[2]["def"]["id"] == "uzi")
+		ShopData.buy(main, "buy_machete")
+		check("开山刀替换近战槽", main.player.weapons[3]["def"]["id"] == "machete")
 		var v_pistol: float = main.player.speed()
-		main.player.switch_weapon(1)
-		check("大枪持有时移速更慢", main.player.speed() < v_pistol)
 		main.player.switch_weapon(0)
+		check("大枪持有时移速更慢", main.player.speed() < v_pistol)
+		main.player.switch_weapon(2)
 		main.player.hp = 10.0
 		ShopData.buy(main, "medkit")
 		check("急救包回满血", main.player.hp == main.player.max_hp())
