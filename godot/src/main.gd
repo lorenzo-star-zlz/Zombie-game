@@ -87,7 +87,7 @@ func _reset() -> void:
 	if player != null:
 		player.queue_free()
 	player = Player.new()
-	player.position = Vector2(Config.W / 2.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)
+	player.position = Vector2(320.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)  # 出生在左侧家园旁
 	world.add_child(player)
 	day = 1
 	coins = 60
@@ -117,8 +117,8 @@ func _enter_night() -> void:
 	night_kills = 0
 	paused = false
 	hud.set_paused(false)
-	# 玩家回到街区中央，弹匣补满（备弹不变）
-	player.position = Vector2(Config.W / 2.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)
+	# 玩家回到家园门口迎敌，弹匣补满（备弹不变）
+	player.position = Vector2(320.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)
 	for w in player.weapons:
 		var need: int = player.mag_size_of(w) - w["mag"]
 		if w["def"]["infinite_reserve"]:
@@ -191,7 +191,7 @@ func _process(delta: float) -> void:
 	# 踹击
 	var kick := player.try_kick()
 	if not kick.is_empty():
-		var center := player.position + Vector2(0, -26)
+		var center := player.position + Vector2(0, -140)
 		fx.ring(center, kick["radius"], Color.WHITE)
 		for z in zombies:
 			if z.position.distance_to(player.position) < kick["radius"] + z.radius:
@@ -199,7 +199,7 @@ func _process(delta: float) -> void:
 				z.stun = kick["stun"]
 				var dir := signf(z.position.x - player.position.x)
 				z.kb_vx = (dir if dir != 0.0 else 1.0) * kick["knockback"]
-				fx.burst(z.position + Vector2(0, -40), Color.WHITE, 4, 100.0)
+				fx.burst(z.position + Vector2(0, -150), Color.WHITE, 4, 100.0)
 				if z.hp <= 0.0:
 					_on_kill(z)
 
@@ -215,7 +215,7 @@ func _process(delta: float) -> void:
 	for z in zombies:
 		z.tick(delta, player)
 
-	# 子弹与命中（躯干中心在脚底坐标上方约 40px）
+	# 子弹与命中（躯干中心在脚底坐标上方约 150px）
 	for b in bullets:
 		b.tick(delta)
 		if b.dead:
@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 		for z in zombies:
 			if z.hp <= 0.0 or b.hit_list.has(z):
 				continue
-			if b.position.distance_to(z.position + Vector2(0, -40)) < z.radius * 2.0:
+			if b.position.distance_to(z.position + Vector2(0, -150)) < z.radius * 2.2:
 				b.hit_list.append(z)
 				z.take_damage(b.damage)
 				fx.burst(b.position, Color(0.61, 0.13, 0.15), 4, 90.0)
@@ -259,11 +259,11 @@ func _process(delta: float) -> void:
 
 	hud.update_hud(self)
 
+# 家园在最左 → 僵尸只从右侧进场
 func _spawn_zombie() -> void:
 	var pool: Array = night_cfg["pool"]
 	var def: Dictionary = EnemyData.ENEMIES[pool.pick_random()]
-	var from_left := randf() < 0.5
-	var x := -30.0 if from_left else Config.W + 30.0
+	var x := Config.W + 170.0  # 整个精灵（半宽160）在屏外
 	var y := randf_range(Config.BAND_TOP, Config.BAND_BOTTOM)
 	var z := Zombie.new()
 	z.setup(def, Vector2(x, y), night_cfg)
@@ -278,5 +278,5 @@ func _on_kill(z: Zombie) -> void:
 	var heal: float = player.mods["heal_on_kill"]
 	if heal > 0.0:
 		player.hp = minf(player.max_hp(), player.hp + heal)
-	fx.burst(z.position + Vector2(0, -30), Color("#7fb069"), 10, 150.0)
-	fx.add_text(z.position + Vector2(0, -100), "+%d" % gain, Color(1.0, 0.82, 0.4))
+	fx.burst(z.position + Vector2(0, -150), Color("#7fb069"), 10, 150.0)
+	fx.add_text(z.position + Vector2(0, -310), "+%d" % gain, Color(1.0, 0.82, 0.4))

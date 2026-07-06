@@ -4,7 +4,7 @@ class_name ShopData
 const ITEMS := [
 	{ "id": "medkit",      "icon": "🩹", "name": "急救包",     "desc": "生命完全恢复",                                "base_price": 40,  "growth": 1.0 },
 	{ "id": "ammo",        "icon": "🔋", "name": "弹药补给",   "desc": "所有武器备弹补满",                            "base_price": 25,  "growth": 1.0 },
-	{ "id": "buy_shotgun", "icon": "🔫", "name": "购买霰弹枪", "desc": "雷明顿 870：近距离一炮糊脸（Q 或 2 切换）",   "base_price": 150, "growth": 1.0 },
+	{ "id": "buy_shotgun", "icon": "🔫", "name": "购买霰弹枪", "desc": "雷明顿 870：近距离一炮糊脸，持枪移速 -22%（Q 或 2 切换）", "base_price": 150, "growth": 1.0 },
 	{ "id": "gunsmith",    "icon": "🔧", "name": "枪匠保养",   "desc": "所有武器伤害永久 +5%（可重复，价格递增）",    "base_price": 70,  "growth": 1.5 },
 ]
 

@@ -42,15 +42,17 @@ func _init() -> void:
 func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.texture = TEX_0
-	_sprite.scale = Vector2(3, 3)
-	_sprite.position = Vector2(0, -26)  # 脚底对齐节点原点附近
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.scale = Vector2(Config.SPRITE_SCALE, Config.SPRITE_SCALE)
+	_sprite.position = Vector2(0, Config.SPRITE_OFFSET_Y)  # 脚底对齐节点原点
 	add_child(_sprite)
 
 func max_hp() -> float:
 	return Config.PLAYER["base_max_hp"] + mods["max_hp_add"]
 
+# 写实向机动：基础速度 × 肉鸽加成 × 当前武器负重（枪越大越慢）
 func speed() -> float:
-	return Config.PLAYER["base_speed"] * mods["move_speed_mult"]
+	return Config.PLAYER["base_speed"] * mods["move_speed_mult"] * weapon()["def"].get("move_mult", 1.0)
 
 func weapon() -> Dictionary:
 	return weapons[weapon_index]
@@ -111,13 +113,13 @@ func tick(delta: float) -> void:
 	# 移动
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	position += dir * speed() * delta
-	position.x = clampf(position.x, 30.0, Config.W - 30.0)
+	position.x = clampf(position.x, 60.0, Config.W - 60.0)
 	position.y = clampf(position.y, Config.BAND_TOP, Config.BAND_BOTTOM)
 	_moving = dir.length_squared() > 0.01
 
-	# 瞄准
+	# 瞄准（以持枪高度为原点）
 	var mouse := get_global_mouse_position()
-	aim_angle = (mouse - global_position + Vector2(0, 26)).angle()
+	aim_angle = (mouse - global_position + Vector2(0, Config.AIM_HEIGHT)).angle()
 	_sprite.flip_h = mouse.x < global_position.x
 
 	# 计时器
@@ -166,7 +168,7 @@ func try_fire() -> Array:
 		start_reload()  # 打空自动换弹
 
 	var shots := []
-	var muzzle := global_position + Vector2(cos(aim_angle), sin(aim_angle)) * 30.0 + Vector2(0, -26)
+	var muzzle := global_position + Vector2(cos(aim_angle), sin(aim_angle)) * 145.0 + Vector2(0, -Config.AIM_HEIGHT)
 	for i in range(w["def"]["pellets"]):
 		var spread: float = (randf() - 0.5) * deg_to_rad(w["def"]["spread_deg"])
 		var ang := aim_angle + spread
@@ -196,11 +198,11 @@ func try_kick() -> Dictionary:
 
 func _draw() -> void:
 	# 脚下阴影
-	draw_set_transform(Vector2(0, 24), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, 20.0, Color(0, 0, 0, 0.3))
+	draw_set_transform(Vector2(0, -2), 0.0, Vector2(1.0, 0.3))
+	draw_circle(Vector2.ZERO, 52.0, Color(0, 0, 0, 0.3))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	# 换弹进度环
+	# 换弹进度环（头顶上方）
 	if reload_timer > 0.0:
 		var total: float = weapon()["def"]["reload_time"] / mods["reload_speed_mult"]
 		var t := 1.0 - reload_timer / total
-		draw_arc(Vector2(0, -95), 10.0, -PI / 2, -PI / 2 + t * TAU, 24, Color(1.0, 0.82, 0.4), 4.0)
+		draw_arc(Vector2(0, -320), 16.0, -PI / 2, -PI / 2 + t * TAU, 24, Color(1.0, 0.82, 0.4), 5.0)

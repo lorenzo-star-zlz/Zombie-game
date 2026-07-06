@@ -1,4 +1,5 @@
 # 武器数据表。新增武器只需要在这里加一条，不用改逻辑代码。
+# move_mult：持枪移动速度倍率——枪越大越重，走路越慢（写实向机动）。
 class_name WeaponData
 
 const WEAPONS := {
@@ -15,10 +16,11 @@ const WEAPONS := {
 		"bullet_speed": 950.0,
 		"pierce": 0,           # 可穿透敌人数
 		"range": 1600.0,       # 射程
+		"move_mult": 1.0,      # 轻便，不影响移动
 		"infinite_reserve": true,
 		"reserve_max": 0,
 		"price": 0,
-		"desc": "可靠的老伙计，备弹无限，永远不会让你空手。",
+		"desc": "可靠的老伙计，备弹无限，轻便不拖累脚步。",
 	},
 	"shotgun": {
 		"id": "shotgun",
@@ -33,9 +35,10 @@ const WEAPONS := {
 		"bullet_speed": 800.0,
 		"pierce": 0,
 		"range": 420.0,
+		"move_mult": 0.78,     # 长枪压手，持有时移速 -22%
 		"infinite_reserve": false,
 		"reserve_max": 48,
 		"price": 150,
-		"desc": "近距离一炮糊脸，7 颗弹丸撕碎贴脸的僵尸。射程短。",
+		"desc": "近距离一炮糊脸，7 颗弹丸撕碎贴脸的僵尸。射程短，持枪移速 -22%。",
 	},
 }

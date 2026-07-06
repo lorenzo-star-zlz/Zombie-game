@@ -28,4 +28,4 @@ func tick(delta: float) -> void:
 		dead = true
 
 func _draw() -> void:
-	draw_rect(Rect2(-8, -2, 14, 4), Color(1.0, 0.85, 0.23))
+	draw_rect(Rect2(-14, -3, 24, 6), Color(1.0, 0.85, 0.23))

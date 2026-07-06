@@ -38,9 +38,10 @@ func _process(_delta: float) -> bool:
 	# 模拟移动（第 5~30 帧按住 D）
 	if frame == 5:
 		Input.action_press("move_right")
+		main.player.set_meta("x0", main.player.position.x)
 	if frame == 30:
 		Input.action_release("move_right")
-		check("玩家向右移动", main.player.position.x > Config.W / 2.0 + 10.0)
+		check("玩家向右移动", main.player.position.x > float(main.player.get_meta("x0")) + 10.0)
 
 	# 模拟点射（每 12 帧点一下鼠标）
 	if frame > 30 and frame < 150:
@@ -56,6 +57,12 @@ func _process(_delta: float) -> bool:
 		check("模拟点射产生子弹", fired_bullets)
 		check("消耗了弹匣", main.player.weapon()["mag"] < WeaponData.WEAPONS["pistol"]["mag_size"])
 		check("夜晚出怪", main.zombies.size() > 0)
+		var all_right := true
+		for z in main.zombies:
+			if z.position.x < Config.W * 0.55:
+				all_right = false
+		check("僵尸只从右侧进场", all_right)
+		check("后期波次池包含奔跑者", WaveData.night_config(5)["pool"].has("runner"))
 
 	# 僵尸移动检测
 	if frame == 160 and main.zombies.size() > 0:
@@ -106,6 +113,10 @@ func _process(_delta: float) -> bool:
 		ShopData.buy(main, "buy_shotgun")
 		check("购买后拥有霰弹枪", main.player.has_weapon("shotgun"))
 		check("购买后商店下架", not ShopData.is_available(main, "buy_shotgun"))
+		var v_pistol: float = main.player.speed()
+		main.player.switch_weapon(1)
+		check("大枪持有时移速更慢", main.player.speed() < v_pistol)
+		main.player.switch_weapon(0)
 		main.player.hp = 10.0
 		ShopData.buy(main, "medkit")
 		check("急救包回满血", main.player.hp == main.player.max_hp())

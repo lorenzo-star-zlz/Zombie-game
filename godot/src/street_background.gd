@@ -1,14 +1,17 @@
-# 像素风街景背景（参考图：青空 + 山脉剪影 + 大片草场 + 柏油路 + 黄虚线 + 泥土）
+# 像素风街景背景（按概念截图比例：青空 + 山脉剪影 + 大片草场 + 马路 + 泥土）
 # 全部程序化绘制，布局用固定种子生成，白天/夜晚只换配色。
+# 画面最左是家园建筑（home.png），僵尸只会从右侧进场。
 class_name StreetBackground
 extends Node2D
 
 const PX := 4.0          # 像素块大小
-const SKY_BOTTOM := 190.0
-const GRASS_BOTTOM := 458.0
-const CURB_BOTTOM := 480.0
-const ROAD_BOTTOM := 684.0
-const DASH_Y := 573.0
+const SKY_BOTTOM := 100.0
+const GRASS_BOTTOM := 290.0
+const CURB_BOTTOM := 312.0
+const ROAD_BOTTOM := 552.0
+const DASH_Y := 424.0
+
+const HOME_TEX := preload("res://assets/sprites/home.png")
 
 const PALETTE := {
 	"day": {
@@ -18,6 +21,7 @@ const PALETTE := {
 		"curb": "#a8adb4", "curb_shadow": "#8a8f96",
 		"road": "#666a73", "speck": "#5a5e66", "dash": "#dbc23a",
 		"dirt": "#4d3b28", "dirt_speck": "#3c2e1f",
+		"home_tint": Color.WHITE,
 	},
 	"night": {
 		"sky": "#10122e", "cloud": "#2c3054",
@@ -26,10 +30,12 @@ const PALETTE := {
 		"curb": "#4a4e55", "curb_shadow": "#3a3d43",
 		"road": "#2e3038", "speck": "#26282f", "dash": "#6f652f",
 		"dirt": "#241c12", "dirt_speck": "#1a140d",
+		"home_tint": Color(0.42, 0.46, 0.62),
 	},
 }
 
 var phase := "day"
+var _home: Sprite2D
 var _grass_cols := []
 var _mount_h := []
 var _clouds := []
@@ -44,22 +50,33 @@ func _ready() -> void:
 	var n := int(Config.W / PX) + 1
 	for i in range(n):
 		_grass_cols.append({
-			"top": 182.0 + rng.randf_range(-10.0, 10.0),
+			"top": 96.0 + rng.randf_range(-8.0, 8.0),
 			"ci": rng.randi_range(0, 3),
 		})
 		_mount_h.append(34.0 + 26.0 * sin(i * 0.085) + 18.0 * sin(i * 0.023 + 2.0) + rng.randf_range(-4.0, 4.0))
 	for i in range(7):
-		_clouds.append(Vector2(rng.randf_range(20.0, Config.W - 60.0), rng.randf_range(16.0, 100.0)))
-	for i in range(260):
+		_clouds.append(Vector2(rng.randf_range(20.0, Config.W - 60.0), rng.randf_range(10.0, 60.0)))
+	for i in range(300):
 		_road_specks.append(Vector2(rng.randf_range(0.0, Config.W), rng.randf_range(CURB_BOTTOM + 6.0, ROAD_BOTTOM - 6.0)))
-	for i in range(120):
+	for i in range(160):
 		_dirt_specks.append(Vector2(rng.randf_range(0.0, Config.W), rng.randf_range(ROAD_BOTTOM + 4.0, Config.H - 4.0)))
 	for i in range(60):
-		_stars.append(Vector2(rng.randf_range(0.0, Config.W), rng.randf_range(4.0, 150.0)))
+		_stars.append(Vector2(rng.randf_range(0.0, Config.W), rng.randf_range(4.0, 90.0)))
+
+	# 家园建筑：贴在画面最左，坐在路缘上（32x30 画布 × 8 = 256x240）
+	_home = Sprite2D.new()
+	_home.texture = HOME_TEX
+	_home.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_home.scale = Vector2(8, 8)
+	_home.position = Vector2(128.0, CURB_BOTTOM - 120.0)
+	add_child(_home)
+
 	queue_redraw()
 
 func set_phase(p: String) -> void:
 	phase = p
+	if _home != null:
+		_home.modulate = PALETTE[phase]["home_tint"]
 	queue_redraw()
 
 func _draw() -> void:
@@ -73,8 +90,8 @@ func _draw() -> void:
 		for s in _stars:
 			draw_rect(Rect2(s.x, s.y, 3, 3), Color("#cdd3e8"))
 		# 月亮
-		draw_circle(Vector2(Config.W - 170.0, 74.0), 30.0, Color("#e8e6d8"))
-		draw_circle(Vector2(Config.W - 182.0, 66.0), 26.0, Color(c["sky"]))
+		draw_circle(Vector2(Config.W - 170.0, 48.0), 26.0, Color("#e8e6d8"))
+		draw_circle(Vector2(Config.W - 181.0, 41.0), 22.0, Color(c["sky"]))
 	else:
 		# 像素云（三块矩形一朵）
 		for cl in _clouds:
