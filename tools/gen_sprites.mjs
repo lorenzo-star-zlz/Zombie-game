@@ -103,13 +103,10 @@ function drawSurvivorBody(c) {
   // 躯干（衬衫）
   c.rect(16, 9, 9, 10, P.shirt);
   c.rect(16, 17, 9, 2, P.shirtDark);
-  // 双臂前伸：袖子 + 前臂 + 托枪副手
+  // 双臂前伸：袖子 + 前臂 + 托枪副手（枪不再焊死在身上，改为独立 gun_*.png 叠加）
   c.rect(25, 10, 6, 2, P.shirtDark);
   c.rect(31, 10, 3, 3, P.skin);
   c.rect(25, 12, 6, 1, P.skin);
-  // 手枪：套筒在手上方，枪口伸到 col38（离身体中心 col20 → 144px@8x）
-  c.rect(31, 8, 8, 2, P.gun);
-  c.rect(34, 10, 2, 2, P.gunDark);
   // 腰带 + 胯
   c.rect(16, 19, 9, 1, P.shoe);
   c.rect(16, 20, 9, 3, P.pants);
@@ -237,16 +234,109 @@ function drawRunner(frame) {
   c.save(`runner_${frame}.png`);
 }
 
-// ---------- 家园建筑（画面最左）：32x30，scale=8 → 256x240 ----------
+// ---------- 枪械贴图（20x10，握把基准点固定在 (4,6)，朝右）----------
+// 玩家手在世界坐标 (脚底+96, 高度200) → Godot 里枪精灵中心挂 (144, -208)
+const G = {
+  metal: '#565a60', dark: '#33353a',
+  silver: '#c9cdd2', silverDark: '#9aa0a6',
+  wood: '#7a4f2b', woodDark: '#5e3c20',
+  olive: '#5a5f47', oliveDark: '#464a37',
+  ammo: '#4c5a3a',
+};
+const GUNS = {
+  // M1911：银色套筒小手枪（枪口 x10 → muzzle_len 145）
+  pistol(c) {
+    c.rect(4, 3, 7, 1, G.silver);
+    c.rect(4, 4, 7, 1, G.silverDark);
+    c.rect(4, 5, 5, 1, G.dark);
+    c.rect(4, 6, 2, 3, G.dark);
+  },
+  // 沙漠之鹰：厚重大套筒（x11 → 152）
+  deagle(c) {
+    c.rect(4, 2, 8, 2, G.silver);
+    c.rect(4, 4, 8, 1, G.silverDark);
+    c.rect(4, 5, 3, 1, G.dark);
+    c.rect(4, 6, 2, 3, G.dark);
+  },
+  // UZI：方盒机匣 + 弹匣握把 + 折叠托（x11 → 150）
+  uzi(c) {
+    c.rect(1, 3, 2, 1, G.metal);
+    c.px(1, 4, G.metal);
+    c.rect(3, 3, 7, 3, G.dark);
+    c.rect(10, 4, 2, 1, G.metal);
+    c.rect(5, 6, 2, 4, G.metal);
+  },
+  // 雷明顿 870：木托 + 长管 + 木质护木泵（x16 → 190）
+  shotgun(c) {
+    c.rect(0, 4, 4, 2, G.wood);
+    c.px(0, 6, G.woodDark);
+    c.rect(4, 4, 4, 2, G.dark);
+    c.rect(8, 3, 9, 1, G.metal);
+    c.rect(8, 4, 7, 1, G.dark);
+    c.rect(9, 5, 4, 2, G.woodDark);
+  },
+  // AK-47：木托木护木 + 弯弹匣（x17 → 200）
+  ak47(c) {
+    c.rect(0, 3, 4, 2, G.wood);
+    c.px(0, 5, G.woodDark);
+    c.rect(4, 3, 6, 3, G.dark);
+    c.rect(10, 3, 4, 2, G.wood);
+    c.rect(14, 3, 4, 1, G.metal);
+    c.px(15, 2, G.dark);
+    c.rect(6, 6, 2, 2, G.metal);
+    c.rect(7, 8, 2, 1, G.metal);
+  },
+  // F2000：无托流线橄榄绿机身（x15 → 184）
+  f2000(c) {
+    c.rect(3, 2, 7, 1, G.olive);
+    c.rect(2, 3, 11, 3, G.olive);
+    c.rect(4, 6, 6, 1, G.oliveDark);
+    c.rect(13, 3, 3, 1, G.metal);
+    c.rect(7, 6, 2, 2, G.dark);
+  },
+  // 98K：全木身长枪管 + 拉栓（x19 → 214）
+  kar98k(c) {
+    c.rect(0, 4, 8, 2, G.wood);
+    c.rect(0, 6, 3, 1, G.woodDark);
+    c.rect(8, 3, 12, 1, G.metal);
+    c.rect(8, 4, 7, 1, G.wood);
+    c.rect(8, 5, 2, 1, G.dark);
+    c.px(9, 6, G.silver);
+    c.px(18, 2, G.dark);
+  },
+  // M249：大机匣 + 弹药箱 + 两脚架（x17 → 200）
+  m249(c) {
+    c.rect(0, 3, 3, 3, G.dark);
+    c.rect(3, 2, 9, 4, G.dark);
+    c.rect(4, 1, 6, 1, G.metal);
+    c.rect(12, 3, 6, 1, G.metal);
+    c.px(16, 2, G.dark);
+    c.px(14, 5, G.metal); c.px(13, 6, G.metal); c.px(15, 6, G.metal);
+    c.rect(5, 6, 4, 3, G.ammo);
+  },
+};
+function drawGuns() {
+  for (const [id, fn] of Object.entries(GUNS)) {
+    const c = canvas(20, 10);
+    fn(c);
+    c.save(`gun_${id}.png`);
+  }
+}
+
+// ---------- 家园建筑（画面最左，现代末世要塞风）：32x32，scale=8 → 256x256 ----------
+// 铁丝网 + 瓦楞铁屋顶 + 弹孔混凝土墙 + 木板封窗 + 铁皮补丁 + 警示牌 + 沙袋墙
 const H = {
-  roof: '#565b62', roofHi: '#6d7278',
-  wall: '#b3b8be', wallDark: '#989da4',
-  frame: '#4a3524', wood: '#6b4a2e', woodHi: '#7d5a3a',
-  stone: '#8a8f96', stoneDark: '#71767d',
+  post: '#3a3d43', wire: '#6d7278',
+  roofHi: '#8a8f96', roof: '#565b62', roofLine: '#4a4e54',
+  wall: '#b3b8be', wallDark: '#989da4', crack: '#71767d', pock: '#565b62',
+  hole: '#1f1b16', plank: '#7a5a36', plankDark: '#5e3c20', nail: '#33353a',
+  sheet: '#6d7278', sheetDark: '#565b62', rust: '#8a5a33',
+  sign: '#d8b93a', signDark: '#26262e',
+  bagBg: '#55503c', bag: '#8a815e', bagHi: '#9c936c', bagLo: '#6f684c',
   grass: '#86ac35', grassDark: '#79992b',
 };
 function drawHome() {
-  const c = canvas(32, 30);
+  const c = canvas(32, 32);
   drawHomeInto(c);
   c.save('home.png');
 }

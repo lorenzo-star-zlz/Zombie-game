@@ -1,0 +1,137 @@
+{
+  "pistol": {
+    "display_name": "M1911 手枪",
+    "source_name": "M1911手枪",
+    "source_index": 0,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_00.png",
+    "file": "pistol.png",
+    "pixel_size": [
+      47,
+      33
+    ],
+    "visible_width": 43,
+    "world_length": 68,
+    "hold_pose": "pistol",
+    "grip_x_ratio": 0.43
+  },
+  "uzi": {
+    "display_name": "UZI 冲锋手枪",
+    "source_name": "UZI冲锋枪",
+    "source_index": 1,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_01.png",
+    "file": "uzi.png",
+    "pixel_size": [
+      50,
+      37
+    ],
+    "visible_width": 46,
+    "world_length": 82,
+    "hold_pose": "pistol",
+    "grip_x_ratio": 0.46
+  },
+  "kar98k": {
+    "display_name": "Kar98k 步枪",
+    "source_name": "Kar98k栓动步枪",
+    "source_index": 2,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_02.png",
+    "file": "kar98k.png",
+    "pixel_size": [
+      54,
+      14
+    ],
+    "visible_width": 50,
+    "world_length": 145,
+    "hold_pose": "rifle",
+    "grip_x_ratio": 0.39
+  },
+  "shotgun": {
+    "display_name": "雷明顿 870",
+    "source_name": "雷明顿870霰弹枪",
+    "source_index": 3,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_03.png",
+    "file": "shotgun.png",
+    "pixel_size": [
+      51,
+      17
+    ],
+    "visible_width": 47,
+    "world_length": 148,
+    "hold_pose": "rifle",
+    "grip_x_ratio": 0.36
+  },
+  "ak47": {
+    "display_name": "AK-47",
+    "source_name": "AK47突击步枪",
+    "source_index": 4,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_04.png",
+    "file": "ak47.png",
+    "pixel_size": [
+      53,
+      21
+    ],
+    "visible_width": 49,
+    "world_length": 132,
+    "hold_pose": "rifle",
+    "grip_x_ratio": 0.4
+  },
+  "m4": {
+    "display_name": "M4A1",
+    "source_name": "M4A1卡宾枪",
+    "source_index": 5,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_05.png",
+    "file": "m4.png",
+    "pixel_size": [
+      53,
+      20
+    ],
+    "visible_width": 49,
+    "world_length": 126,
+    "hold_pose": "rifle",
+    "grip_x_ratio": 0.39
+  },
+  "m249": {
+    "display_name": "M249 轻机枪",
+    "source_name": "M249轻机枪",
+    "source_index": 6,
+    "source_file": "art/meowa/realistic_firearm_overlays/sprite_06.png",
+    "file": "m249.png",
+    "pixel_size": [
+      51,
+      24
+    ],
+    "visible_width": 47,
+    "world_length": 142,
+    "hold_pose": "rifle",
+    "grip_x_ratio": 0.42
+  },
+  "knife": {
+    "display_name": "战术匕首",
+    "source_name": "战术格斗刀",
+    "source_index": 0,
+    "source_file": "art/meowa/realistic_melee_overlays/sprite_00.png",
+    "file": "knife.png",
+    "pixel_size": [
+      48,
+      50
+    ],
+    "visible_width": 44,
+    "world_length": 72,
+    "hold_pose": "melee",
+    "grip_x_ratio": 0.35
+  },
+  "machete": {
+    "display_name": "开山刀",
+    "source_name": "农用大砍刀",
+    "source_index": 1,
+    "source_file": "art/meowa/realistic_melee_overlays/sprite_01.png",
+    "file": "machete.png",
+    "pixel_size": [
+      49,
+      51
+    ],
+    "visible_width": 45,
+    "world_length": 96,
+    "hold_pose": "melee",
+    "grip_x_ratio": 0.28
+  }
+}

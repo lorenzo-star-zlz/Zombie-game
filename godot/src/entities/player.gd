@@ -37,6 +37,12 @@ var radius: float = Config.PLAYER["radius"]
 
 var _sprite: Sprite2D
 var _weapon_sprite: Sprite2D
+var _rear_arm: Line2D
+var _front_arm: Line2D
+var _rear_sleeve: Line2D
+var _front_sleeve: Line2D
+var _rear_hand: Polygon2D
+var _front_hand: Polygon2D
 var _anim_time := 0.0
 var _moving := false
 var _muzzle_flash_timer := 0.0
@@ -63,7 +69,34 @@ func _ready() -> void:
 	_weapon_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_weapon_sprite.z_index = 2
 	add_child(_weapon_sprite)
+	_rear_sleeve = _make_arm(1, 11.0, Color("#617a9c"))
+	_front_sleeve = _make_arm(3, 11.0, Color("#7b93b4"))
+	_rear_arm = _make_arm(1, 7.0, Color("#c99a72"))
+	_front_arm = _make_arm(3, 7.0, Color("#e5b88f"))
+	_rear_hand = _make_hand(1)
+	_front_hand = _make_hand(3)
 	_update_weapon_visual()
+
+func _make_arm(layer: int, width: float, color: Color) -> Line2D:
+	var arm := Line2D.new()
+	arm.width = width
+	arm.default_color = color
+	arm.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	arm.end_cap_mode = Line2D.LINE_CAP_ROUND
+	arm.antialiased = false
+	arm.z_index = layer
+	add_child(arm)
+	return arm
+
+func _make_hand(layer: int) -> Polygon2D:
+	var hand := Polygon2D.new()
+	hand.polygon = PackedVector2Array([
+		Vector2(-4, -3), Vector2(4, -3), Vector2(5, 3), Vector2(0, 5), Vector2(-5, 3),
+	])
+	hand.color = Color("#e5b88f")
+	hand.z_index = layer
+	add_child(hand)
+	return hand
 
 func max_hp() -> float:
 	return Config.PLAYER["base_max_hp"] + mods["max_hp_add"]
@@ -273,7 +306,11 @@ func _update_weapon_visual() -> void:
 	var item := _displayed_weapon()
 	var definition: Dictionary = item["def"]
 	_weapon_sprite.texture = WEAPON_TEXTURES[definition["id"]]
-	var scale_value: float = definition["overlay_scale"] * Config.WEAPON_VISUAL_SCALE
+	var scale_value: float = (
+		float(definition["world_length"])
+		/ float(definition["asset_width"])
+		* Config.WEAPON_VISUAL_SCALE
+	)
 	_weapon_sprite.scale = Vector2(scale_value, scale_value)
 	var direction := Vector2(cos(aim_angle), sin(aim_angle))
 	var reload_phase := 0.0
@@ -285,9 +322,56 @@ func _update_weapon_visual() -> void:
 		var duration: float = definition.get("cooldown", 0.7)
 		swing = sin(clampf(1.0 - _melee_swing_timer / duration, 0.0, 1.0) * PI) * 1.1
 	var side := 1.0
-	_weapon_sprite.position = Vector2(0, -Config.AIM_HEIGHT) + direction * (Config.WEAPON_HAND_DISTANCE - _recoil * 8.0) + Vector2(0, reload_phase * 26.0)
+	var grip_to_center := (0.5 - float(definition["grip_x_ratio"])) * float(definition["world_length"])
+	_weapon_sprite.position = (
+		Vector2(0, -Config.AIM_HEIGHT)
+		+ direction * (10.0 + grip_to_center - _recoil * 8.0)
+		+ Vector2(0, reload_phase * 26.0)
+	)
 	_weapon_sprite.rotation = aim_angle + side * (reload_phase * 0.8 - swing)
 	_weapon_sprite.flip_v = false
+	_update_hold_pose(definition, direction)
+
+func _update_hold_pose(definition: Dictionary, direction: Vector2) -> void:
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var weapon_base := Vector2(0, -Config.AIM_HEIGHT)
+	var pose: String = definition["hold_pose"]
+	var rear_shoulder := Vector2(-8, -Config.AIM_HEIGHT - 18)
+	var front_shoulder := Vector2(5, -Config.AIM_HEIGHT - 9)
+	var rear_grip := weapon_base + direction * 10.0 + perpendicular * 4.0
+	var front_grip := rear_grip
+	if pose == "rifle":
+		front_grip = weapon_base + direction * float(definition["front_grip"]) - perpendicular * 2.0
+	elif pose == "pistol":
+		# 人物底图已包含双手合拢姿势；副武器直接落在双手中心，避免多画一对手臂。
+		_rear_sleeve.visible = false
+		_front_sleeve.visible = false
+		_rear_arm.visible = false
+		_front_arm.visible = false
+		_rear_hand.visible = false
+		_front_hand.visible = false
+		return
+	else:
+		_rear_sleeve.visible = false
+		_front_sleeve.visible = false
+		_rear_arm.visible = false
+		_front_arm.visible = false
+		_rear_hand.visible = false
+		_front_hand.visible = false
+		return
+	# 人物底图的后手负责扳机/握把，仅补绘伸向护木的前手。
+	_rear_sleeve.visible = false
+	_front_sleeve.visible = true
+	_rear_arm.visible = false
+	_front_arm.visible = true
+	_rear_hand.visible = false
+	_front_hand.visible = true
+	var rear_elbow := rear_shoulder.lerp(rear_grip, 0.42) + perpendicular * 4.0
+	var front_elbow := front_shoulder.lerp(front_grip, 0.45) - perpendicular * 3.0
+	_front_sleeve.points = PackedVector2Array([front_shoulder, front_elbow])
+	_front_arm.points = PackedVector2Array([front_elbow, front_grip])
+	_front_hand.position = front_grip
+	_front_hand.rotation = aim_angle
 
 func try_fire() -> Array:
 	var item := weapon()

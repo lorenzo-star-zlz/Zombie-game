@@ -1,0 +1,45 @@
+{
+  "api_job_id": "aec7fe46-c0b7-4ed8-bece-15546d3e17a1",
+  "status": "success",
+  "error": "",
+  "output": {
+    "url": "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_00.png",
+    "final_sprite_paths": [
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_00.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_01.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_02.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_03.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_04.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_05.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_06.png",
+      "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_07.png"
+    ],
+    "prompt_detail": "侧视图，战术格斗刀，黑色哑光刀刃，带有锯齿背脊，深灰色防滑橡胶手柄；侧视图，重型农用大砍刀，锈迹斑斑的宽大刀身，木质手柄缠绕着破旧的麻绳；侧视图，消防斧，深红色涂漆斧头，斧刃处有金属磨损痕迹，深色硬木长柄；侧视图，钢制撬棍，弯曲的钩状末端，表面布满深灰色金属划痕和油污；侧视图，木制棒球棍，深棕色木纹，手柄处缠绕着黑色电工胶带，表面有几处凹痕；侧视图，木工锤，方形金属锤头，带有拔钉器，浅色木质手柄，金属部分有轻微锈迹；侧视图，短柄生存长矛，锋利的金属矛头，矛尖处有血迹残留，长木杆末端削尖；侧视图，工兵铲，折叠式金属铲头，边缘锋利，深绿色金属涂层，短木柄末端有金属环扣",
+    "sprite_pack_names": [
+      "战术格斗刀",
+      "农用大砍刀",
+      "消防斧",
+      "钢制撬棍",
+      "木制棒球棍",
+      "木工锤",
+      "生存长矛",
+      "工兵铲"
+    ],
+    "sprite_crop_path": "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_00.png",
+    "sprite_pack_preview_path": "https://media.meowa.ai/public/pixel-gen/output/2026-07-06/08%3A08%3A18-aec7fe46-c0b7-4ed8-bece-15546d3e17a1/sprite_pack_preview.png"
+  },
+  "stage": "completed",
+  "progress": {
+    "percent": 100,
+    "label": "已完成"
+  },
+  "queue": {
+    "position": 0,
+    "estimated_wait_seconds": 0
+  },
+  "credit_refund": {
+    "refunded": false,
+    "amount": 0,
+    "reference_id": "aec7fe46-c0b7-4ed8-bece-15546d3e17a1"
+  }
+}

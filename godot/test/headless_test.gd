@@ -31,6 +31,17 @@ func _process(_delta: float) -> bool:
 		main.start_run()
 		check("开始游戏进入白天", main.state == "day")
 		check("开局金币 60", main.coins == 60)
+		var manifest = JSON.parse_string(FileAccess.get_file_as_string("res://assets/weapons/weapon_asset_manifest.json"))
+		check("九件武器都有独立美术映射", manifest is Dictionary and manifest.size() == WeaponData.WEAPONS.size())
+		var asset_names_match := true
+		for weapon_id in WeaponData.WEAPONS:
+			if (
+				not manifest.has(weapon_id)
+				or manifest[weapon_id]["display_name"] != WeaponData.WEAPONS[weapon_id]["name"]
+				or not FileAccess.file_exists("res://assets/weapons/%s" % manifest[weapon_id]["file"])
+			):
+				asset_names_match = false
+		check("武器名称与独立贴图文件一一对应", asset_names_match)
 		main._enter_night()
 		check("进入夜晚", main.state == "night")
 		check("尸潮数量按波次表", main.spawn_remaining == WaveData.night_config(1)["count"])
