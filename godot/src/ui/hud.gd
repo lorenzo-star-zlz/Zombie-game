@@ -257,9 +257,11 @@ func update_hud(main) -> void:
 		_slot_keys[index].add_theme_color_override("font_color", Color("#ffe37a") if active else Color.WHITE)
 		if item == null:
 			_slot_icons[index].texture = null
+			_slot_keys[index].text = "%d  %s" % [index + 1, WeaponData.SLOT_NAMES[index]]
 			_slot_ammo[index].text = "空槽"
 			continue
 		var definition: Dictionary = item["def"]
+		_slot_keys[index].text = "%d  %s" % [index + 1, definition["name"]]
 		_slot_icons[index].texture = load("res://assets/weapons/%s.png" % definition["id"])
 		if definition["category"] == "melee":
 			_slot_ammo[index].text = definition["name"]

@@ -229,10 +229,12 @@ func tick(delta: float) -> void:
 	_moving = direction.length_squared() > 0.01
 
 	var mouse := get_global_mouse_position()
-	aim_angle = (mouse - global_position + Vector2(0, Config.AIM_HEIGHT)).angle()
+	var aim_vector := mouse - global_position + Vector2(0, Config.AIM_HEIGHT)
+	# 敌人从右侧进攻：人物始终面向右侧。向左移动时保持朝向，形成后退步态。
+	aim_vector.x = maxf(aim_vector.x, 1.0)
+	aim_angle = clampf(aim_vector.angle(), -PI * 0.48, PI * 0.48)
 	var frame_index := 0 if int(_anim_time * 8.0) % 2 == 0 else 1
-	var faces_left := mouse.x < global_position.x
-	_sprite.flip_h = faces_left != (frame_index == 1)
+	_sprite.flip_h = false
 
 	fire_timer = maxf(0.0, fire_timer - delta)
 	kick_timer = maxf(0.0, kick_timer - delta)
@@ -282,10 +284,10 @@ func _update_weapon_visual() -> void:
 	if _melee_swing_timer > 0.0:
 		var duration: float = definition.get("cooldown", 0.7)
 		swing = sin(clampf(1.0 - _melee_swing_timer / duration, 0.0, 1.0) * PI) * 1.1
-	var side := 1.0 if cos(aim_angle) >= 0.0 else -1.0
+	var side := 1.0
 	_weapon_sprite.position = Vector2(0, -Config.AIM_HEIGHT) + direction * (Config.WEAPON_HAND_DISTANCE - _recoil * 8.0) + Vector2(0, reload_phase * 26.0)
 	_weapon_sprite.rotation = aim_angle + side * (reload_phase * 0.8 - swing)
-	_weapon_sprite.flip_v = cos(aim_angle) < 0.0
+	_weapon_sprite.flip_v = false
 
 func try_fire() -> Array:
 	var item := weapon()

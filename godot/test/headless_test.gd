@@ -42,6 +42,13 @@ func _process(_delta: float) -> bool:
 	if frame == 30:
 		Input.action_release("move_right")
 		check("玩家向右移动", main.player.position.x > float(main.player.get_meta("x0")) + 10.0)
+		Input.action_press("move_left")
+		main.player.set_meta("backpedal_x0", main.player.position.x)
+	if frame == 50:
+		Input.action_release("move_left")
+		check("玩家可向左后退", main.player.position.x < float(main.player.get_meta("backpedal_x0")) - 5.0)
+		check("后退时人物仍面向右侧", not main.player._sprite.flip_h)
+		check("瞄准方向限制在右半平面", cos(main.player.aim_angle) > 0.0)
 
 	# 模拟点射（每 12 帧点一下鼠标）
 	if frame > 30 and frame < 150:
