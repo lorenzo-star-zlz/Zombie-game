@@ -114,7 +114,30 @@ func add_weapon(id: String) -> bool:
 	if has_weapon(id):
 		return false
 	_register_owned_weapon(id)
-	equip_owned_weapon(id)
+	return true
+
+func equip_to_slot(id: String, slot: int) -> bool:
+	if slot < 0 or slot >= weapons.size():
+		return false
+	if id.is_empty() and slot < 2:
+		weapons[slot] = null
+		if weapon_index == slot:
+			weapon_index = 2
+		_update_weapon_visual()
+		return true
+	if not weapon_instances.has(id):
+		return false
+	var item: Dictionary = weapon_instances[id]
+	var expected_category := "primary" if slot < 2 else ("secondary" if slot == 2 else "melee")
+	if item["def"]["category"] != expected_category:
+		return false
+	var previous_slot := equipped_slot(id)
+	if previous_slot >= 0 and previous_slot != slot:
+		weapons[previous_slot] = null
+	weapons[slot] = item
+	if weapon_index == previous_slot or weapons[weapon_index] == null:
+		weapon_index = slot
+	_update_weapon_visual()
 	return true
 
 func equip_owned_weapon(id: String) -> bool:
@@ -248,7 +271,7 @@ func _update_weapon_visual() -> void:
 	var item := _displayed_weapon()
 	var definition: Dictionary = item["def"]
 	_weapon_sprite.texture = WEAPON_TEXTURES[definition["id"]]
-	var scale_value: float = definition["overlay_scale"]
+	var scale_value: float = definition["overlay_scale"] * Config.WEAPON_VISUAL_SCALE
 	_weapon_sprite.scale = Vector2(scale_value, scale_value)
 	var direction := Vector2(cos(aim_angle), sin(aim_angle))
 	var reload_phase := 0.0
@@ -260,7 +283,7 @@ func _update_weapon_visual() -> void:
 		var duration: float = definition.get("cooldown", 0.7)
 		swing = sin(clampf(1.0 - _melee_swing_timer / duration, 0.0, 1.0) * PI) * 1.1
 	var side := 1.0 if cos(aim_angle) >= 0.0 else -1.0
-	_weapon_sprite.position = Vector2(0, -Config.AIM_HEIGHT) + direction * (28.0 - _recoil * 10.0) + Vector2(0, reload_phase * 30.0)
+	_weapon_sprite.position = Vector2(0, -Config.AIM_HEIGHT) + direction * (Config.WEAPON_HAND_DISTANCE - _recoil * 8.0) + Vector2(0, reload_phase * 26.0)
 	_weapon_sprite.rotation = aim_angle + side * (reload_phase * 0.8 - swing)
 	_weapon_sprite.flip_v = cos(aim_angle) < 0.0
 
@@ -285,7 +308,7 @@ func try_fire() -> Array:
 		start_reload()
 
 	var shots := []
-	var muzzle: Vector2 = global_position + Vector2(0, -Config.AIM_HEIGHT) + Vector2(cos(aim_angle), sin(aim_angle)) * float(item["def"]["muzzle_distance"])
+	var muzzle: Vector2 = global_position + Vector2(0, -Config.AIM_HEIGHT) + Vector2(cos(aim_angle), sin(aim_angle)) * float(item["def"]["muzzle_distance"]) * Config.WEAPON_VISUAL_SCALE
 	for _pellet in range(item["def"]["pellets"]):
 		var spread: float = (randf() - 0.5) * deg_to_rad(item["def"]["spread_deg"])
 		var angle := aim_angle + spread
@@ -330,7 +353,7 @@ func _draw() -> void:
 	if _muzzle_flash_timer > 0.0 and weapon()["def"]["category"] != "melee":
 		var direction := Vector2(cos(aim_angle), sin(aim_angle))
 		var perpendicular := Vector2(-direction.y, direction.x)
-		var muzzle: Vector2 = Vector2(0, -Config.AIM_HEIGHT) + direction * float(weapon()["def"]["muzzle_distance"])
+		var muzzle: Vector2 = Vector2(0, -Config.AIM_HEIGHT) + direction * float(weapon()["def"]["muzzle_distance"]) * Config.WEAPON_VISUAL_SCALE
 		draw_colored_polygon(PackedVector2Array([
 			muzzle - perpendicular * 9.0,
 			muzzle + direction * 38.0,

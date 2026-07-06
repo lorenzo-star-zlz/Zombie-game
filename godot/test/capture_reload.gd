@@ -12,6 +12,7 @@ func _process(_delta: float) -> bool:
 	if frame == 2:
 		main.start_run()
 		main.player.add_weapon("kar98k")
+		main.player.equip_to_slot("kar98k", 0)
 		main.player.switch_weapon(0)
 		main._enter_night()
 		main.player.weapon()["mag"] = 0

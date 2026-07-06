@@ -124,40 +124,14 @@ func _on_buy(m, item: Dictionary, on_night: Callable) -> void:
 func show_loadout(m, on_confirm: Callable) -> void:
 	var v := _begin_panel()
 	_mk_label(v, "第 %d 天 · 出战装备" % m.day, 30, GOLD)
-	_mk_label(v, "选择最多两把主武器、一把副武器和一把近战武器", 15, DIM)
-	_mk_label(v, "主武器槽满时，先点击已装备主武器卸下", 13, DIM)
+	_mk_label(v, "商店购买的枪会进入仓库；每个固定槽位从仓库中独立选择装备", 15, DIM)
 
-	var grid := GridContainer.new()
-	grid.columns = 3
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 12)
-	v.add_child(grid)
-
-	for id in m.player.owned_weapon_ids:
-		var item: Dictionary = m.player.weapon_instances[id]
-		var definition: Dictionary = item["def"]
-		var slot: int = m.player.equipped_slot(id)
-		var status := "已装备：%s" % WeaponData.SLOT_NAMES[slot] if slot >= 0 else "点击装备"
-		var button := _mk_button(grid, "%s\n%s" % [definition["name"], status], 14)
-		button.custom_minimum_size = Vector2(260, 62)
-		button.icon = load("res://assets/weapons/%s.png" % id)
-		button.expand_icon = true
-		button.add_theme_constant_override("icon_max_width", 56)
-		button.disabled = (
-			definition["category"] == "primary"
-			and slot < 0
-			and not m.player.can_equip_category("primary")
-		)
-		button.pressed.connect(_on_toggle_loadout.bind(m, id, on_confirm))
-
-	var active := []
-	for index in range(m.player.weapons.size()):
-		var equipped = m.player.weapons[index]
-		active.append("%s：%s" % [
-			WeaponData.SLOT_NAMES[index],
-			"空" if equipped == null else equipped["def"]["name"],
-		])
-	_mk_label(v, "当前带入\n" + "\n".join(active), 14, DIM)
+	var slots := HBoxContainer.new()
+	slots.alignment = BoxContainer.ALIGNMENT_CENTER
+	slots.add_theme_constant_override("separation", 12)
+	v.add_child(slots)
+	for index in range(4):
+		_build_loadout_slot(slots, m, index, on_confirm)
 
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -169,8 +143,46 @@ func show_loadout(m, on_confirm: Callable) -> void:
 	confirm.disabled = not m.player.is_loadout_valid()
 	confirm.pressed.connect(on_confirm)
 
-func _on_toggle_loadout(m, id: String, on_confirm: Callable) -> void:
-	m.player.toggle_loadout_weapon(id)
+func _build_loadout_slot(parent: Node, m, slot: int, on_confirm: Callable) -> void:
+	var card := VBoxContainer.new()
+	card.custom_minimum_size = Vector2(190, 150)
+	parent.add_child(card)
+	_mk_label(card, "%d  %s" % [slot + 1, WeaponData.SLOT_NAMES[slot]], 16, GOLD)
+	var equipped = m.player.weapons[slot]
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = Vector2(180, 72)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if equipped != null:
+		icon.texture = load("res://assets/weapons/%s.png" % equipped["def"]["id"])
+	card.add_child(icon)
+	var picker := OptionButton.new()
+	picker.add_theme_font_override("font", _font)
+	picker.add_theme_font_size_override("font_size", 14)
+	var category := "primary" if slot < 2 else ("secondary" if slot == 2 else "melee")
+	var selected := 0
+	var option_index := 0
+	if category == "primary":
+		picker.add_item("空槽")
+		picker.set_item_metadata(0, "")
+		option_index = 1
+	for id in m.player.owned_weapon_ids:
+		var definition: Dictionary = m.player.weapon_instances[id]["def"]
+		if definition["category"] != category:
+			continue
+		picker.add_item(definition["name"])
+		picker.set_item_metadata(option_index, id)
+		if equipped != null and equipped["def"]["id"] == id:
+			selected = option_index
+		option_index += 1
+	picker.select(selected)
+	picker.item_selected.connect(_on_loadout_slot_selected.bind(m, slot, picker, on_confirm))
+	card.add_child(picker)
+
+func _on_loadout_slot_selected(option: int, m, slot: int, picker: OptionButton, on_confirm: Callable) -> void:
+	var id: String = picker.get_item_metadata(option)
+	m.player.equip_to_slot(id, slot)
 	show_loadout(m, on_confirm)
 
 # ---------- 夜晚结算 + 肉鸽三选一 ----------

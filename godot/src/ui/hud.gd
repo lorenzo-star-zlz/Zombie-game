@@ -11,7 +11,10 @@ var _wave_label: Label
 var _coins_label: Label
 var _weapon_label: Label
 var _ammo_label: Label
-var _slots_label: Label
+var _slot_cards: Array[ColorRect] = []
+var _slot_icons: Array[TextureRect] = []
+var _slot_keys: Array[Label] = []
+var _slot_ammo: Array[Label] = []
 var _kick_label: Label
 var _pause_label: Label
 var _pause_panel: ColorRect
@@ -65,28 +68,52 @@ func _build_top_status() -> void:
 
 func _build_bottom_loadout() -> void:
 	var tray := ColorRect.new()
-	tray.position = Vector2(0, Config.H - 94)
-	tray.size = Vector2(Config.W, 94)
+	tray.position = Vector2(0, Config.H - 112)
+	tray.size = Vector2(Config.W, 112)
 	tray.color = Color(0.13, 0.10, 0.07, 0.76)
 	add_child(tray)
 
 	var edge := ColorRect.new()
-	edge.position = Vector2(0, Config.H - 98)
+	edge.position = Vector2(0, Config.H - 116)
 	edge.size = Vector2(Config.W, 4)
 	edge.color = Color(0.82, 0.76, 0.48, 0.85)
 	add_child(edge)
 
-	_weapon_label = _mk_label(Vector2(42, Config.H - 78), 22)
-	_ammo_label = _mk_label(Vector2(42, Config.H - 49), 16)
+	_weapon_label = _mk_label(Vector2(28, Config.H - 92), 19)
+	_weapon_label.size = Vector2(205, 28)
+	_ammo_label = _mk_label(Vector2(28, Config.H - 61), 15)
 
-	_slots_label = _mk_label(Vector2(285, Config.H - 73), 14)
-	_slots_label.size = Vector2(520, 58)
+	for index in range(4):
+		var card := ColorRect.new()
+		card.position = Vector2(246 + index * 154, Config.H - 101)
+		card.size = Vector2(142, 88)
+		card.color = Color(0.06, 0.055, 0.045, 0.9)
+		add_child(card)
+		_slot_cards.append(card)
 
-	var controls := _mk_label(Vector2(805, Config.H - 62), 14)
+		var key := _mk_label(card.position + Vector2(8, 4), 14)
+		key.text = "%d  %s" % [index + 1, WeaponData.SLOT_NAMES[index]]
+		_slot_keys.append(key)
+
+		var icon := TextureRect.new()
+		icon.position = card.position + Vector2(10, 25)
+		icon.size = Vector2(122, 42)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(icon)
+		_slot_icons.append(icon)
+
+		var ammo := _mk_label(card.position + Vector2(8, 65), 11)
+		ammo.size = Vector2(126, 18)
+		ammo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_slot_ammo.append(ammo)
+
+	var controls := _mk_label(Vector2(880, Config.H - 72), 13)
 	controls.text = "Esc  暂停与操作指南"
 	controls.modulate = Color(1, 1, 1, 0.72)
 
-	_kick_label = _mk_label(Vector2(1080, Config.H - 66), 19)
+	_kick_label = _mk_label(Vector2(1080, Config.H - 76), 18)
 	_kick_label.size = Vector2(160, 36)
 	_kick_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
@@ -223,16 +250,22 @@ func update_hud(main) -> void:
 		_ammo_label.text = "弹药  %d / %s" % [weapon["mag"], reserve]
 		_ammo_label.modulate = Color.WHITE
 
-	var slot_parts := []
 	for index in range(player.weapons.size()):
 		var item = player.weapons[index]
-		var name := "空" if item == null else str(item["def"]["name"])
-		var slot := "%d %s: %s" % [index + 1, WeaponData.SLOT_NAMES[index], name]
-		slot_parts.append(("[" + slot + "]") if index == player.weapon_index else slot)
-	_slots_label.text = "%s\n%s" % [
-		"   ".join(slot_parts.slice(0, 2)),
-		"   ".join(slot_parts.slice(2, 4)),
-	]
+		var active := index == player.weapon_index
+		_slot_cards[index].color = Color(0.34, 0.25, 0.08, 0.96) if active else Color(0.06, 0.055, 0.045, 0.9)
+		_slot_keys[index].add_theme_color_override("font_color", Color("#ffe37a") if active else Color.WHITE)
+		if item == null:
+			_slot_icons[index].texture = null
+			_slot_ammo[index].text = "空槽"
+			continue
+		var definition: Dictionary = item["def"]
+		_slot_icons[index].texture = load("res://assets/weapons/%s.png" % definition["id"])
+		if definition["category"] == "melee":
+			_slot_ammo[index].text = definition["name"]
+		else:
+			var slot_reserve := "∞" if definition["infinite_reserve"] else str(item["reserve"])
+			_slot_ammo[index].text = "%d / %s" % [item["mag"], slot_reserve]
 
 	if player.kick_timer > 0.0:
 		_kick_label.text = "近战  %.1fs" % player.kick_timer
