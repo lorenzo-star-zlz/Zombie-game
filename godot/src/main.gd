@@ -119,8 +119,8 @@ func _enter_night() -> void:
 	paused = false
 	hud.set_paused(false)
 	player.position = Vector2(320.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)
-	for w in player.weapons:
-		if w == null or w["def"]["category"] == "melee":
+	for w in player.weapon_instances.values():
+		if w["def"]["category"] == "melee":
 			continue
 		var need: int = player.mag_size_of(w) - w["mag"]
 		if w["def"]["infinite_reserve"]:

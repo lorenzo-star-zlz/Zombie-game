@@ -21,8 +21,8 @@ static func is_available(main, id: String) -> bool:
 	if id == "medkit":
 		return main.player.hp < main.player.max_hp()
 	if id == "ammo":
-		for weapon in main.player.weapons:
-			if weapon != null and weapon["def"]["category"] != "melee":
+		for weapon in main.player.weapon_instances.values():
+			if weapon["def"]["category"] != "melee":
 				if not weapon["def"]["infinite_reserve"] and weapon["reserve"] < weapon["def"]["reserve_max"]:
 					return true
 		return false
@@ -32,17 +32,15 @@ static func is_available(main, id: String) -> bool:
 	if item.is_empty() or not item.has("weapon"):
 		return false
 	var weapon_id: String = item["weapon"]
-	if main.player.has_weapon(weapon_id):
-		return false
-	return main.player.can_equip_category(WeaponData.WEAPONS[weapon_id]["category"])
+	return not main.player.has_weapon(weapon_id)
 
 static func buy(main, id: String) -> void:
 	if id == "medkit":
 		main.player.hp = main.player.max_hp()
 		return
 	if id == "ammo":
-		for weapon in main.player.weapons:
-			if weapon != null and weapon["def"]["category"] != "melee":
+		for weapon in main.player.weapon_instances.values():
+			if weapon["def"]["category"] != "melee":
 				if not weapon["def"]["infinite_reserve"]:
 					weapon["reserve"] = weapon["def"]["reserve_max"]
 		return

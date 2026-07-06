@@ -92,6 +92,10 @@ func show_shop(m, on_night: Callable) -> void:
 		var price_txt: String = ("$%d" % price) if can_show else "—"
 		var b := _mk_button(grid, "%s · %s   %s\n%s" % [item["icon"], item["name"], price_txt, item["desc"]], 13)
 		b.custom_minimum_size = Vector2(270, 62)
+		if item.has("weapon"):
+			b.icon = load("res://assets/weapons/%s.png" % item["weapon"])
+			b.expand_icon = true
+			b.add_theme_constant_override("icon_max_width", 52)
 		b.disabled = not can_show or not afford
 		b.pressed.connect(_on_buy.bind(m, item, on_night))
 
@@ -102,10 +106,11 @@ func show_shop(m, on_night: Callable) -> void:
 		var weapon_name := "空" if weapon == null else str(weapon["def"]["name"])
 		inventory.append("%s：%s" % [WeaponData.SLOT_NAMES[index], weapon_name])
 	_mk_label(v, "装备：" + "  ·  ".join(inventory), 14, DIM)
+	_mk_label(v, "仓库：%d 件武器，进入夜晚前可重新配置" % p.owned_weapon_ids.size(), 13, DIM)
 	_mk_label(v, "❤ 生命：%d/%d" % [int(ceil(p.hp)), int(p.max_hp())], 14, DIM)
 
-	var night_btn := _mk_button(v, "🌙 进入夜晚（第 %d 晚）" % m.day)
-	night_btn.pressed.connect(on_night)
+	var night_btn := _mk_button(v, "配置装备并进入第 %d 夜" % m.day)
+	night_btn.pressed.connect(show_loadout.bind(m, on_night))
 
 func _on_buy(m, item: Dictionary, on_night: Callable) -> void:
 	var price: int = ShopData.price_of(m, item)
@@ -115,6 +120,58 @@ func _on_buy(m, item: Dictionary, on_night: Callable) -> void:
 	m.purchase_counts[item["id"]] = m.purchase_counts.get(item["id"], 0) + 1
 	ShopData.buy(m, item["id"])
 	show_shop(m, on_night)  # 刷新界面
+
+func show_loadout(m, on_confirm: Callable) -> void:
+	var v := _begin_panel()
+	_mk_label(v, "第 %d 天 · 出战装备" % m.day, 30, GOLD)
+	_mk_label(v, "选择最多两把主武器、一把副武器和一把近战武器", 15, DIM)
+	_mk_label(v, "主武器槽满时，先点击已装备主武器卸下", 13, DIM)
+
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	v.add_child(grid)
+
+	for id in m.player.owned_weapon_ids:
+		var item: Dictionary = m.player.weapon_instances[id]
+		var definition: Dictionary = item["def"]
+		var slot: int = m.player.equipped_slot(id)
+		var status := "已装备：%s" % WeaponData.SLOT_NAMES[slot] if slot >= 0 else "点击装备"
+		var button := _mk_button(grid, "%s\n%s" % [definition["name"], status], 14)
+		button.custom_minimum_size = Vector2(260, 62)
+		button.icon = load("res://assets/weapons/%s.png" % id)
+		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", 56)
+		button.disabled = (
+			definition["category"] == "primary"
+			and slot < 0
+			and not m.player.can_equip_category("primary")
+		)
+		button.pressed.connect(_on_toggle_loadout.bind(m, id, on_confirm))
+
+	var active := []
+	for index in range(m.player.weapons.size()):
+		var equipped = m.player.weapons[index]
+		active.append("%s：%s" % [
+			WeaponData.SLOT_NAMES[index],
+			"空" if equipped == null else equipped["def"]["name"],
+		])
+	_mk_label(v, "当前带入\n" + "\n".join(active), 14, DIM)
+
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 16)
+	v.add_child(actions)
+	var back := _mk_button(actions, "返回商店", 18)
+	back.pressed.connect(show_shop.bind(m, on_confirm))
+	var confirm := _mk_button(actions, "确认装备，进入夜晚", 18)
+	confirm.disabled = not m.player.is_loadout_valid()
+	confirm.pressed.connect(on_confirm)
+
+func _on_toggle_loadout(m, id: String, on_confirm: Callable) -> void:
+	m.player.toggle_loadout_weapon(id)
+	show_loadout(m, on_confirm)
 
 # ---------- 夜晚结算 + 肉鸽三选一 ----------
 func show_night_reward(m, perks: Array, bonus: int, on_pick: Callable) -> void:

@@ -7,7 +7,7 @@ const H := 720.0
 # 角色渲染：40x36 画布 × 8 倍 = 288px 高（约占屏高 40%，对齐概念截图）
 const SPRITE_SCALE := 1.5
 const SPRITE_OFFSET_Y := -144.0   # 画布脚底在最后一行 → 精灵中心在脚底上方 144px
-const AIM_HEIGHT := 200.0         # 持枪高度（脚底上方），子弹从这里射出
+const AIM_HEIGHT := 165.0         # 新人物底图的双手高度（脚底上方）
 
 # 街道可行走区域（伪纵深横板，按截图：马路 312~552，脚底活动带取中上段）
 const BAND_TOP := 370.0

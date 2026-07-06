@@ -10,6 +10,7 @@ const WEAPONS := {
 		"mag_size": 12, "reload_time": 1.1,
 		"bullet_speed": 950.0, "pierce": 0, "range": 1600.0,
 		"move_mult": 1.0, "infinite_reserve": true, "reserve_max": 0,
+		"muzzle_distance": 66.0, "overlay_scale": 1.75,
 		"price": 0, "desc": "可靠的起始副武器，备弹无限。",
 	},
 	"uzi": {
@@ -19,6 +20,7 @@ const WEAPONS := {
 		"mag_size": 25, "reload_time": 1.45,
 		"bullet_speed": 900.0, "pierce": 0, "range": 1050.0,
 		"move_mult": 0.94, "infinite_reserve": false, "reserve_max": 150,
+		"muzzle_distance": 76.0, "overlay_scale": 2.0,
 		"price": 180, "desc": "高射速副武器，近距离压制尸群。",
 	},
 	"kar98k": {
@@ -28,6 +30,7 @@ const WEAPONS := {
 		"mag_size": 5, "reload_time": 2.6,
 		"bullet_speed": 1500.0, "pierce": 2, "range": 2400.0,
 		"move_mult": 0.78, "infinite_reserve": false, "reserve_max": 45,
+		"muzzle_distance": 112.0, "overlay_scale": 2.65,
 		"price": 180, "desc": "栓动高伤步枪，可连续穿透两只僵尸。",
 	},
 	"shotgun": {
@@ -37,6 +40,7 @@ const WEAPONS := {
 		"mag_size": 6, "reload_time": 2.4,
 		"bullet_speed": 800.0, "pierce": 0, "range": 420.0,
 		"move_mult": 0.78, "infinite_reserve": false, "reserve_max": 48,
+		"muzzle_distance": 108.0, "overlay_scale": 2.6,
 		"price": 150, "desc": "近距离发射 7 颗弹丸，适合清理贴脸敌人。",
 	},
 	"ak47": {
@@ -46,6 +50,7 @@ const WEAPONS := {
 		"mag_size": 30, "reload_time": 2.25,
 		"bullet_speed": 1150.0, "pierce": 0, "range": 1750.0,
 		"move_mult": 0.76, "infinite_reserve": false, "reserve_max": 180,
+		"muzzle_distance": 98.0, "overlay_scale": 2.45,
 		"price": 260, "desc": "威力强、后坐力明显的全自动主武器。",
 	},
 	"m4": {
@@ -55,6 +60,7 @@ const WEAPONS := {
 		"mag_size": 30, "reload_time": 1.9,
 		"bullet_speed": 1250.0, "pierce": 0, "range": 1900.0,
 		"move_mult": 0.82, "infinite_reserve": false, "reserve_max": 210,
+		"muzzle_distance": 96.0, "overlay_scale": 2.4,
 		"price": 340, "desc": "精准、稳定、换弹快的全能突击步枪。",
 	},
 	"m249": {
@@ -64,18 +70,21 @@ const WEAPONS := {
 		"mag_size": 100, "reload_time": 4.8,
 		"bullet_speed": 1200.0, "pierce": 1, "range": 1850.0,
 		"move_mult": 0.58, "infinite_reserve": false, "reserve_max": 400,
+		"muzzle_distance": 108.0, "overlay_scale": 2.55,
 		"price": 520, "desc": "百发弹箱持续压制，沉重且换弹缓慢。",
 	},
 	"knife": {
 		"id": "knife", "category": "melee", "name": "战术匕首",
 		"damage": 18.0, "radius": 155.0, "cooldown": 0.72,
 		"knockback": 260.0, "stun": 0.28, "move_mult": 1.08,
+		"muzzle_distance": 65.0, "overlay_scale": 1.7,
 		"price": 0, "desc": "轻便的起始近战武器。",
 	},
 	"machete": {
 		"id": "machete", "category": "melee", "name": "开山刀",
 		"damage": 42.0, "radius": 190.0, "cooldown": 0.9,
 		"knockback": 460.0, "stun": 0.55, "move_mult": 1.0,
+		"muzzle_distance": 82.0, "overlay_scale": 2.0,
 		"price": 120, "desc": "更大的攻击范围、伤害和击退。",
 	},
 }

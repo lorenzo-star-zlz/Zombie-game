@@ -132,6 +132,7 @@ func _build_pause_overlay() -> void:
 		+ "Q / 数字键 1-4    切换四个武器槽\n"
 		+ "Esc               暂停 / 继续\n\n"
 		+ "白天购买装备，夜晚抵御尸潮。\n"
+		+ "每天进入夜晚前可从仓库配置出战装备。\n"
 		+ "坚持 10 天即可获胜。"
 	)
 	var close_guide := _mk_button(Vector2(Config.W / 2.0 - 110, 518), Vector2(220, 46), "返回暂停菜单")
