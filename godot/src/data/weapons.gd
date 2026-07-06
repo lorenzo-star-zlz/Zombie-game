@@ -1,44 +1,99 @@
-# 武器数据表。新增武器只需要在这里加一条，不用改逻辑代码。
-# move_mult：持枪移动速度倍率——枪越大越重，走路越慢（写实向机动）。
 class_name WeaponData
+
+const SLOT_NAMES := ["主武器 1", "主武器 2", "副武器", "近战"]
 
 const WEAPONS := {
 	"pistol": {
-		"id": "pistol",
-		"name": "M1911 手枪",
-		"damage": 14.0,        # 单颗弹丸伤害
-		"pellets": 1,          # 每次开火弹丸数
-		"spread_deg": 3.0,     # 散布角度
-		"fire_interval": 0.22, # 开火间隔（秒）
-		"auto": false,         # false = 点一下打一发
-		"mag_size": 12,
-		"reload_time": 1.1,
-		"bullet_speed": 950.0,
-		"pierce": 0,           # 可穿透敌人数
-		"range": 1600.0,       # 射程
-		"move_mult": 1.0,      # 轻便，不影响移动
-		"infinite_reserve": true,
-		"reserve_max": 0,
-		"price": 0,
-		"desc": "可靠的老伙计，备弹无限，轻便不拖累脚步。",
+		"id": "pistol", "category": "secondary", "name": "M1911 手枪",
+		"damage": 14.0, "pellets": 1, "spread_deg": 3.0,
+		"fire_interval": 0.22, "auto": false,
+		"mag_size": 12, "reload_time": 1.1,
+		"bullet_speed": 950.0, "pierce": 0, "range": 1600.0,
+		"move_mult": 1.0, "infinite_reserve": true, "reserve_max": 0,
+		"muzzle_distance": 68.0, "asset_width": 47.0, "world_length": 68.0,
+		"hold_pose": "pistol", "front_grip": 9.0, "grip_x_ratio": 0.43,
+		"price": 0, "desc": "可靠的起始副武器，备弹无限。",
+	},
+	"uzi": {
+		"id": "uzi", "category": "secondary", "name": "UZI 冲锋手枪",
+		"damage": 8.0, "pellets": 1, "spread_deg": 8.0,
+		"fire_interval": 0.075, "auto": true,
+		"mag_size": 25, "reload_time": 1.45,
+		"bullet_speed": 900.0, "pierce": 0, "range": 1050.0,
+		"move_mult": 0.94, "infinite_reserve": false, "reserve_max": 150,
+		"muzzle_distance": 82.0, "asset_width": 49.0, "world_length": 82.0,
+		"hold_pose": "pistol", "front_grip": 14.0, "grip_x_ratio": 0.46,
+		"price": 180, "desc": "高射速副武器，近距离压制尸群。",
+	},
+	"kar98k": {
+		"id": "kar98k", "category": "primary", "name": "Kar98k 步枪",
+		"damage": 95.0, "pellets": 1, "spread_deg": 0.8,
+		"fire_interval": 1.15, "auto": false,
+		"mag_size": 5, "reload_time": 2.6,
+		"bullet_speed": 1500.0, "pierce": 2, "range": 2400.0,
+		"move_mult": 0.78, "infinite_reserve": false, "reserve_max": 45,
+		"muzzle_distance": 145.0, "asset_width": 43.0, "world_length": 145.0,
+		"hold_pose": "rifle", "front_grip": 47.0, "grip_x_ratio": 0.39,
+		"price": 180, "desc": "栓动高伤步枪，可连续穿透两只僵尸。",
 	},
 	"shotgun": {
-		"id": "shotgun",
-		"name": "雷明顿 870 霰弹枪",
-		"damage": 9.0,
-		"pellets": 7,
-		"spread_deg": 16.0,
-		"fire_interval": 0.85,
-		"auto": false,
-		"mag_size": 6,
-		"reload_time": 2.4,
-		"bullet_speed": 800.0,
-		"pierce": 0,
-		"range": 420.0,
-		"move_mult": 0.78,     # 长枪压手，持有时移速 -22%
-		"infinite_reserve": false,
-		"reserve_max": 48,
-		"price": 150,
-		"desc": "近距离一炮糊脸，7 颗弹丸撕碎贴脸的僵尸。射程短，持枪移速 -22%。",
+		"id": "shotgun", "category": "primary", "name": "雷明顿 870",
+		"damage": 9.0, "pellets": 7, "spread_deg": 16.0,
+		"fire_interval": 0.85, "auto": false,
+		"mag_size": 6, "reload_time": 2.4,
+		"bullet_speed": 800.0, "pierce": 0, "range": 420.0,
+		"move_mult": 0.78, "infinite_reserve": false, "reserve_max": 48,
+		"muzzle_distance": 148.0, "asset_width": 49.0, "world_length": 148.0,
+		"hold_pose": "rifle", "front_grip": 49.0, "grip_x_ratio": 0.36,
+		"price": 150, "desc": "近距离发射 7 颗弹丸，适合清理贴脸敌人。",
+	},
+	"ak47": {
+		"id": "ak47", "category": "primary", "name": "AK-47",
+		"damage": 25.0, "pellets": 1, "spread_deg": 5.5,
+		"fire_interval": 0.105, "auto": true,
+		"mag_size": 30, "reload_time": 2.25,
+		"bullet_speed": 1150.0, "pierce": 0, "range": 1750.0,
+		"move_mult": 0.76, "infinite_reserve": false, "reserve_max": 180,
+		"muzzle_distance": 132.0, "asset_width": 46.0, "world_length": 132.0,
+		"hold_pose": "rifle", "front_grip": 43.0, "grip_x_ratio": 0.40,
+		"price": 260, "desc": "威力强、后坐力明显的全自动主武器。",
+	},
+	"m4": {
+		"id": "m4", "category": "primary", "name": "M4A1",
+		"damage": 20.0, "pellets": 1, "spread_deg": 2.8,
+		"fire_interval": 0.085, "auto": true,
+		"mag_size": 30, "reload_time": 1.9,
+		"bullet_speed": 1250.0, "pierce": 0, "range": 1900.0,
+		"move_mult": 0.82, "infinite_reserve": false, "reserve_max": 210,
+		"muzzle_distance": 126.0, "asset_width": 47.0, "world_length": 126.0,
+		"hold_pose": "rifle", "front_grip": 41.0, "grip_x_ratio": 0.39,
+		"price": 340, "desc": "精准、稳定、换弹快的全能突击步枪。",
+	},
+	"m249": {
+		"id": "m249", "category": "primary", "name": "M249 轻机枪",
+		"damage": 18.0, "pellets": 1, "spread_deg": 6.5,
+		"fire_interval": 0.065, "auto": true,
+		"mag_size": 100, "reload_time": 4.8,
+		"bullet_speed": 1200.0, "pierce": 1, "range": 1850.0,
+		"move_mult": 0.58, "infinite_reserve": false, "reserve_max": 400,
+		"muzzle_distance": 142.0, "asset_width": 50.0, "world_length": 142.0,
+		"hold_pose": "rifle", "front_grip": 46.0, "grip_x_ratio": 0.42,
+		"price": 520, "desc": "百发弹箱持续压制，沉重且换弹缓慢。",
+	},
+	"knife": {
+		"id": "knife", "category": "melee", "name": "战术匕首",
+		"damage": 18.0, "radius": 155.0, "cooldown": 0.72,
+		"knockback": 260.0, "stun": 0.28, "move_mult": 1.08,
+		"muzzle_distance": 65.0, "asset_width": 44.0, "world_length": 72.0,
+		"hold_pose": "melee", "front_grip": 0.0, "grip_x_ratio": 0.35,
+		"price": 0, "desc": "轻便的起始近战武器。",
+	},
+	"machete": {
+		"id": "machete", "category": "melee", "name": "开山刀",
+		"damage": 42.0, "radius": 190.0, "cooldown": 0.9,
+		"knockback": 460.0, "stun": 0.55, "move_mult": 1.0,
+		"muzzle_distance": 82.0, "asset_width": 45.0, "world_length": 96.0,
+		"hold_pose": "melee", "front_grip": 0.0, "grip_x_ratio": 0.28,
+		"price": 120, "desc": "更大的攻击范围、伤害和击退。",
 	},
 }

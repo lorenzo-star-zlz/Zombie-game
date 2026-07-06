@@ -1,0 +1,20 @@
+{
+  "api_job_id": "afd002a9-8d4c-442b-87ad-ec3c39d6da7e",
+  "status": "failure",
+  "error": "target_count must be between 1 and 8",
+  "output": null,
+  "stage": "failed",
+  "progress": {
+    "percent": 100,
+    "label": "失败"
+  },
+  "queue": {
+    "position": 0,
+    "estimated_wait_seconds": 0
+  },
+  "credit_refund": {
+    "refunded": true,
+    "amount": 20,
+    "reference_id": "afd002a9-8d4c-442b-87ad-ec3c39d6da7e"
+  }
+}

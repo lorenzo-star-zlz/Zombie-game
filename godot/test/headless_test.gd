@@ -31,6 +31,17 @@ func _process(_delta: float) -> bool:
 		main.start_run()
 		check("开始游戏进入白天", main.state == "day")
 		check("开局金币 60", main.coins == 60)
+		var manifest = JSON.parse_string(FileAccess.get_file_as_string("res://assets/weapons/weapon_asset_manifest.json"))
+		check("九件武器都有独立美术映射", manifest is Dictionary and manifest.size() == WeaponData.WEAPONS.size())
+		var asset_names_match := true
+		for weapon_id in WeaponData.WEAPONS:
+			if (
+				not manifest.has(weapon_id)
+				or manifest[weapon_id]["display_name"] != WeaponData.WEAPONS[weapon_id]["name"]
+				or not FileAccess.file_exists("res://assets/weapons/%s" % manifest[weapon_id]["file"])
+			):
+				asset_names_match = false
+		check("武器名称与独立贴图文件一一对应", asset_names_match)
 		main._enter_night()
 		check("进入夜晚", main.state == "night")
 		check("尸潮数量按波次表", main.spawn_remaining == WaveData.night_config(1)["count"])
@@ -42,6 +53,13 @@ func _process(_delta: float) -> bool:
 	if frame == 30:
 		Input.action_release("move_right")
 		check("玩家向右移动", main.player.position.x > float(main.player.get_meta("x0")) + 10.0)
+		Input.action_press("move_left")
+		main.player.set_meta("backpedal_x0", main.player.position.x)
+	if frame == 50:
+		Input.action_release("move_left")
+		check("玩家可向左后退", main.player.position.x < float(main.player.get_meta("backpedal_x0")) - 5.0)
+		check("后退时人物仍面向右侧", not main.player._sprite.flip_h)
+		check("瞄准方向限制在右半平面", cos(main.player.aim_angle) > 0.0)
 
 	# 模拟点射（每 12 帧点一下鼠标）
 	if frame > 30 and frame < 150:
@@ -108,15 +126,40 @@ func _process(_delta: float) -> bool:
 	# 商店测试
 	if frame == 260:
 		print("商店:")
-		main.coins = 500
+		main.coins = 2000
+		check("初始拥有一把副武器", main.player.weapons[2]["def"]["id"] == "pistol")
+		check("初始拥有一把近战武器", main.player.weapons[3]["def"]["id"] == "knife")
 		check("霰弹枪可购买", ShopData.is_available(main, "buy_shotgun"))
 		ShopData.buy(main, "buy_shotgun")
 		check("购买后拥有霰弹枪", main.player.has_weapon("shotgun"))
+		check("购买后先进入仓库", not main.player.is_equipped("shotgun"))
 		check("购买后商店下架", not ShopData.is_available(main, "buy_shotgun"))
+		ShopData.buy(main, "buy_kar98k")
+		main.player.equip_to_slot("shotgun", 0)
+		main.player.equip_to_slot("kar98k", 1)
+		check("可装备两把主武器", main.player.weapons[0] != null and main.player.weapons[1] != null)
+		check("主武器槽满后仍可购买到仓库", ShopData.is_available(main, "buy_ak47"))
+		ShopData.buy(main, "buy_ak47")
+		check("AK-47 已进入仓库", main.player.has_weapon("ak47"))
+		check("主武器槽满时 AK-47 不会强制替换", not main.player.is_equipped("ak47"))
+		main.player.equip_to_slot("", 0)
+		main.player.equip_to_slot("ak47", 0)
+		check("卸下一把后可带入 AK-47", main.player.is_equipped("ak47"))
+		ShopData.buy(main, "buy_uzi")
+		check("UZI 购买后留在仓库", main.player.weapons[2]["def"]["id"] == "pistol")
+		main.player.equip_to_slot("uzi", 2)
+		check("副武器槽可选择 UZI", main.player.weapons[2]["def"]["id"] == "uzi")
+		ShopData.buy(main, "buy_machete")
+		main.player.equip_to_slot("machete", 3)
+		check("近战槽可选择开山刀", main.player.weapons[3]["def"]["id"] == "machete")
+		check("当前出战配置有效", main.player.is_loadout_valid())
+		main.screens.show_loadout(main, main._enter_night)
+		check("每天可打开装备选择界面", main.screens._root != null)
+		main.screens.clear()
 		var v_pistol: float = main.player.speed()
-		main.player.switch_weapon(1)
-		check("大枪持有时移速更慢", main.player.speed() < v_pistol)
 		main.player.switch_weapon(0)
+		check("大枪持有时移速更慢", main.player.speed() < v_pistol)
+		main.player.switch_weapon(2)
 		main.player.hp = 10.0
 		ShopData.buy(main, "medkit")
 		check("急救包回满血", main.player.hp == main.player.max_hp())

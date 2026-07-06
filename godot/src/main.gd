@@ -39,6 +39,7 @@ func _ready() -> void:
 	add_child(fx)
 	hud = Hud.new()
 	add_child(hud)
+	hud.resume_requested.connect(_resume_from_hud)
 	hud.visible = false
 	screens = Screens.new()
 	add_child(screens)
@@ -113,13 +114,14 @@ func _enter_night() -> void:
 	fx.show_crosshair = true
 	night_cfg = WaveData.night_config(day)
 	spawn_remaining = night_cfg["count"]
-	spawn_timer = 0.8  # 给玩家一点反应时间
+	spawn_timer = 0.8
 	night_kills = 0
 	paused = false
 	hud.set_paused(false)
-	# 玩家回到家园门口迎敌，弹匣补满（备弹不变）
 	player.position = Vector2(320.0, (Config.BAND_TOP + Config.BAND_BOTTOM) / 2.0)
-	for w in player.weapons:
+	for w in player.weapon_instances.values():
+		if w["def"]["category"] == "melee":
+			continue
 		var need: int = player.mag_size_of(w) - w["mag"]
 		if w["def"]["infinite_reserve"]:
 			w["mag"] += need
@@ -156,54 +158,48 @@ func _game_over() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	screens.show_game_over(self, start_run)
 
+func _resume_from_hud() -> void:
+	if state != "night" or not paused:
+		return
+	paused = false
+	hud.set_paused(false)
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+
 # ---------- 夜晚主循环 ----------
 func _process(delta: float) -> void:
 	if state != "night":
 		return
-
 	if Input.is_action_just_pressed("pause"):
 		paused = not paused
 		hud.set_paused(paused)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_HIDDEN
 	if paused:
 		return
 
 	player.tick(delta)
-
-	# 换弹 / 切枪
 	if Input.is_action_just_pressed("reload"):
 		player.start_reload()
 	if Input.is_action_just_pressed("switch"):
 		player.cycle_weapon()
-	for i in range(9):
+	for i in range(4):
 		if Input.is_action_just_pressed("weapon_%d" % (i + 1)):
 			player.switch_weapon(i)
 
-	# 开火
 	var shots := player.try_fire()
 	if shots.size() > 0:
-		for s in shots:
-			var b := Bullet.new()
-			b.setup(s)
-			shots_layer.add_child(b)
-			bullets.append(b)
+		for shot in shots:
+			var bullet := Bullet.new()
+			bullet.setup(shot)
+			shots_layer.add_child(bullet)
+			bullets.append(bullet)
 		fx.burst(shots[0]["pos"], Color(1.0, 0.85, 0.23), 3, 80.0)
 
-	# 踹击
-	var kick := player.try_kick()
-	if not kick.is_empty():
-		var center := player.position + Vector2(0, -140)
-		fx.ring(center, kick["radius"], Color.WHITE)
-		for z in zombies:
-			if z.position.distance_to(player.position) < kick["radius"] + z.radius:
-				z.take_damage(kick["damage"])
-				z.stun = kick["stun"]
-				var dir := signf(z.position.x - player.position.x)
-				z.kb_vx = (dir if dir != 0.0 else 1.0) * kick["knockback"]
-				fx.burst(z.position + Vector2(0, -150), Color.WHITE, 4, 100.0)
-				if z.hp <= 0.0:
-					_on_kill(z)
+	var melee_attack := player.try_selected_melee()
+	if melee_attack.is_empty():
+		melee_attack = player.try_kick()
+	if not melee_attack.is_empty():
+		_apply_melee_attack(melee_attack)
 
-	# 出怪
 	if spawn_remaining > 0:
 		spawn_timer -= delta
 		if spawn_timer <= 0.0:
@@ -211,55 +207,58 @@ func _process(delta: float) -> void:
 			spawn_remaining -= 1
 			_spawn_zombie()
 
-	# 僵尸
-	for z in zombies:
-		z.tick(delta, player)
-
-	# 子弹与命中（躯干中心在脚底坐标上方约 150px）
-	for b in bullets:
-		b.tick(delta)
-		if b.dead:
+	for zombie in zombies:
+		zombie.tick(delta, player)
+	for bullet in bullets:
+		bullet.tick(delta)
+		if bullet.dead:
 			continue
-		for z in zombies:
-			if z.hp <= 0.0 or b.hit_list.has(z):
+		for zombie in zombies:
+			if zombie.hp <= 0.0 or bullet.hit_list.has(zombie):
 				continue
-			if b.position.distance_to(z.position + Vector2(0, -150)) < z.radius * 2.2:
-				b.hit_list.append(z)
-				z.take_damage(b.damage)
-				fx.burst(b.position, Color(0.61, 0.13, 0.15), 4, 90.0)
-				if z.hp <= 0.0:
-					_on_kill(z)
-				if b.pierce > 0:
-					b.pierce -= 1
+			if bullet.position.distance_to(zombie.position + Vector2(0, -150)) < zombie.radius * 2.2:
+				bullet.hit_list.append(zombie)
+				zombie.take_damage(bullet.damage)
+				fx.burst(bullet.position, Color(0.61, 0.13, 0.15), 4, 90.0)
+				if zombie.hp <= 0.0:
+					_on_kill(zombie)
+				if bullet.pierce > 0:
+					bullet.pierce -= 1
 				else:
-					b.dead = true
+					bullet.dead = true
 					break
 
-	# 清理
-	for z in zombies.duplicate():
-		if z.hp <= 0.0:
-			zombies.erase(z)
-			z.queue_free()
-	for b in bullets.duplicate():
-		if b.dead:
-			bullets.erase(b)
-			b.queue_free()
-
+	for zombie in zombies.duplicate():
+		if zombie.hp <= 0.0:
+			zombies.erase(zombie)
+			zombie.queue_free()
+	for bullet in bullets.duplicate():
+		if bullet.dead:
+			bullets.erase(bullet)
+			bullet.queue_free()
 	fx.tick(delta)
 
-	# 玩家死亡
 	if player.hp <= 0.0:
 		_game_over()
 		return
-
-	# 夜晚结束：怪出完且清完
 	if spawn_remaining <= 0 and zombies.is_empty():
 		_end_night()
 		return
-
 	hud.update_hud(self)
 
-# 家园在最左 → 僵尸只从右侧进场
+func _apply_melee_attack(attack: Dictionary) -> void:
+	var center := player.position + Vector2(0, -140)
+	fx.ring(center, attack["radius"], Color.WHITE)
+	for zombie in zombies:
+		if zombie.position.distance_to(player.position) < attack["radius"] + zombie.radius:
+			zombie.take_damage(attack["damage"])
+			zombie.stun = attack["stun"]
+			var direction := signf(zombie.position.x - player.position.x)
+			zombie.kb_vx = (direction if direction != 0.0 else 1.0) * attack["knockback"]
+			fx.burst(zombie.position + Vector2(0, -150), Color.WHITE, 4, 100.0)
+			if zombie.hp <= 0.0:
+				_on_kill(zombie)
+
 func _spawn_zombie() -> void:
 	var pool: Array = night_cfg["pool"]
 	var def: Dictionary = EnemyData.ENEMIES[pool.pick_random()]
